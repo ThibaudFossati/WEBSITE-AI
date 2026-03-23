@@ -1,10 +1,10 @@
-import { useEffect, useRef, ReactNode } from 'react'
+import React, { useEffect, useRef, ReactNode } from 'react'
 
 interface TextRevealProps {
   children: ReactNode
   delay?: number
   className?: string
-  as?: keyof JSX.IntrinsicElements
+  as?: React.ElementType
 }
 
 export default function TextReveal({ children, delay = 0, className = '', as: Tag = 'div' }: TextRevealProps) {
