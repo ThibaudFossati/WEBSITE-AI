@@ -1,16 +1,31 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import ParticleCanvas from '../components/ParticleCanvas'
+import MicroDetails from '../components/MicroDetails'
 import TextReveal from '../components/TextReveal'
 import Magnet from '../components/Magnet'
 import { projects } from '../data/projects'
 
 export default function Home() {
   const heroRef = useRef<HTMLElement>(null)
+  const heroTextRef = useRef<HTMLDivElement>(null)
   const [hoveredProject, setHoveredProject] = useState<string | null>(null)
 
   useEffect(() => {
     window.scrollTo(0, 0)
+  }, [])
+
+  // ── Parallax hero — texte dérive à 0.38x du scroll ───────────────────────
+  useEffect(() => {
+    const onScroll = () => {
+      if (!heroTextRef.current || !heroRef.current) return
+      const heroH = heroRef.current.clientHeight
+      const scrollY = window.scrollY
+      if (scrollY > heroH) return
+      heroTextRef.current.style.transform = `translateY(${scrollY * 0.38}px)`
+    }
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
   return (
@@ -26,7 +41,7 @@ export default function Home() {
           justifyContent: 'flex-end',
           padding: '0 48px 64px',
           overflow: 'hidden',
-          background: '#ffffff',
+          background: '#01050f',
         }}
       >
         {/* WebGL Refik Anadol particles */}
@@ -34,15 +49,20 @@ export default function Home() {
           <ParticleCanvas />
         </div>
 
-        {/* Gradient bottom overlay for text legibility */}
+        {/* Micro-détails Canvas 2D overlay */}
+        <div style={{ position: 'absolute', inset: 0, zIndex: 1, pointerEvents: 'none' }}>
+          <MicroDetails />
+        </div>
+
+        {/* Gradient bottom overlay — très léger sur fond clair */}
         <div style={{
-          position: 'absolute', inset: 0, zIndex: 1,
-          background: 'linear-gradient(to top, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.15) 45%, transparent 75%)',
+          position: 'absolute', inset: 0, zIndex: 2,
+          background: 'linear-gradient(to top, rgba(1,5,15,0.90) 0%, rgba(1,5,15,0.3) 45%, transparent 70%)',
           pointerEvents: 'none',
         }} />
 
         {/* Hero content */}
-        <div style={{ position: 'relative', zIndex: 2 }}>
+        <div ref={heroTextRef} style={{ position: 'relative', zIndex: 3 }}>
           {/* Big display title */}
           <div style={{ marginBottom: '32px' }}>
             <TextReveal delay={200} className="block" as="h1">
@@ -53,10 +73,10 @@ export default function Home() {
                   fontSize: 'clamp(72px, 10vw, 160px)',
                   lineHeight: 0.9,
                   letterSpacing: '-0.03em',
-                  color: '#ffffff',
+                  color: '#f0f4ff',
                   display: 'block',
                   fontStyle: 'italic',
-                  textShadow: '0 2px 40px rgba(0,0,0,0.2)',
+                  textShadow: '0 2px 48px rgba(100,180,255,0.25)',
                 }}
               >
                 Art
@@ -70,9 +90,9 @@ export default function Home() {
                   fontSize: 'clamp(72px, 10vw, 160px)',
                   lineHeight: 0.9,
                   letterSpacing: '-0.03em',
-                  color: '#ffffff',
+                  color: '#f0f4ff',
                   display: 'block',
-                  textShadow: '0 2px 40px rgba(0,0,0,0.2)',
+                  textShadow: '0 2px 48px rgba(100,180,255,0.25)',
                 }}
               >
                 Direction
@@ -87,7 +107,7 @@ export default function Home() {
                 fontSize: '11px',
                 letterSpacing: '0.18em',
                 textTransform: 'uppercase',
-                color: 'rgba(255,255,255,0.6)',
+                color: 'rgba(200,220,255,0.55)',
                 fontWeight: 300,
                 whiteSpace: 'nowrap',
               }}>
@@ -100,7 +120,7 @@ export default function Home() {
                 fontSize: '11px',
                 letterSpacing: '0.18em',
                 textTransform: 'uppercase',
-                color: 'rgba(255,255,255,0.45)',
+                color: 'rgba(200,220,255,0.30)',
                 fontWeight: 300,
                 whiteSpace: 'nowrap',
               }}>
@@ -109,6 +129,7 @@ export default function Home() {
             </TextReveal>
           </div>
         </div>
+
 
         {/* Scroll indicator */}
         <div
@@ -129,7 +150,7 @@ export default function Home() {
             style={{
               width: '1px',
               height: '48px',
-              background: '#0a0a0a',
+              background: 'rgba(140,200,255,0.5)',
               animation: 'scrollLine 2s ease infinite',
             }}
           />

@@ -1,5 +1,5 @@
 import { Routes, Route, useLocation } from 'react-router-dom'
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import Lenis from 'lenis'
 import Nav from './components/Nav'
 import Cursor from './components/Cursor'
@@ -10,15 +10,23 @@ import Project from './pages/Project'
 
 export default function App() {
   const location = useLocation()
+  const progressRef = useRef<HTMLDivElement>(null)
 
-  // ── Lenis smooth scroll ───────────────────────────────────────────────
+  // ── Lenis smooth scroll — inertie forte ──────────────────────────────────
   useEffect(() => {
     const lenis = new Lenis({
-      duration: 1.0,
+      duration: 1.4,
       easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
       smoothWheel: true,
-      wheelMultiplier: 0.9,
-      touchMultiplier: 1.5,
+      wheelMultiplier: 1.3,
+      touchMultiplier: 1.8,
+    })
+
+    // Barre de progression scroll
+    lenis.on('scroll', ({ progress }: { progress: number }) => {
+      if (progressRef.current) {
+        progressRef.current.style.transform = `scaleX(${progress})`
+      }
     })
 
     let raf: number
@@ -41,6 +49,22 @@ export default function App() {
 
   return (
     <>
+      {/* Barre de progression — 1px en haut, transform-origin left */}
+      <div
+        ref={progressRef}
+        style={{
+          position: 'fixed',
+          top: 0, left: 0,
+          width: '100%',
+          height: '1px',
+          background: 'rgba(26,22,20,0.22)',
+          transformOrigin: 'left center',
+          transform: 'scaleX(0)',
+          zIndex: 9999,
+          pointerEvents: 'none',
+          willChange: 'transform',
+        }}
+      />
       <Cursor />
       <Nav />
       <Routes>
