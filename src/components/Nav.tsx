@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Magnet from './Magnet'
 import { useSiteContent } from '../hooks/useSiteContent'
 
@@ -10,6 +10,8 @@ export default function Nav() {
   const [scrolled,  setScrolled]  = useState(false)
   const [pastHomeHero, setPastHomeHero] = useState(false)
   const [menuOpen,  setMenuOpen]  = useState(false)
+  const [showScrollHeader, setShowScrollHeader] = useState(true)
+  const lastScrollYRef = useRef(0)
   const isHome = location.pathname === '/'
   const isHomeHeroClear = isHome && !pastHomeHero && !menuOpen
   const onDarkHero = isHomeHeroClear
@@ -27,6 +29,21 @@ export default function Nav() {
     const onScroll = () => {
       const y = window.scrollY
       setScrolled(y > 60)
+
+      const lastY = lastScrollYRef.current
+      const delta = y - lastY
+      const isScrollingUp = delta < -4
+      const isScrollingDown = delta > 4
+
+      if (y <= 12) {
+        setShowScrollHeader(true)
+      } else if (isScrollingUp) {
+        setShowScrollHeader(true)
+      } else if (isScrollingDown) {
+        setShowScrollHeader(false)
+      }
+      lastScrollYRef.current = y
+
       if (location.pathname === '/') {
         const heroHeight = window.innerHeight
         setPastHomeHero(y >= Math.max(0, heroHeight - 8))
@@ -42,6 +59,10 @@ export default function Nav() {
       window.removeEventListener('resize', onScroll)
     }
   }, [location.pathname])
+
+  useEffect(() => {
+    if (menuOpen) setShowScrollHeader(true)
+  }, [menuOpen])
 
   // Close on route change
   useEffect(() => { setMenuOpen(false) }, [location])
@@ -149,6 +170,10 @@ export default function Nav() {
           backdropFilter: isHomeHeroClear ? 'none' : 'blur(18px) saturate(135%)',
           WebkitBackdropFilter: isHomeHeroClear ? 'none' : 'blur(18px) saturate(135%)',
           borderBottom: isHomeHeroClear ? 'none' : `1px solid ${onDarkHero ? 'rgba(194, 220, 255, 0.12)' : 'rgba(10, 10, 10, 0.07)'}`,
+          transform: isHomeHeroClear || showScrollHeader || menuOpen ? 'translateY(0)' : 'translateY(-120%)',
+          opacity: isHomeHeroClear || showScrollHeader || menuOpen ? 1 : 0,
+          pointerEvents: isHomeHeroClear || showScrollHeader || menuOpen ? 'auto' : 'none',
+          transitionProperty: 'background, backdrop-filter, border-color, transform, opacity',
         }}
       >
         {/* Logo */}
