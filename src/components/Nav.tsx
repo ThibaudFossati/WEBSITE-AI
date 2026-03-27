@@ -8,22 +8,40 @@ export default function Nav() {
   const location = useLocation()
   const navigate = useNavigate()
   const [scrolled,  setScrolled]  = useState(false)
+  const [pastHomeHero, setPastHomeHero] = useState(false)
   const [menuOpen,  setMenuOpen]  = useState(false)
-  const onDarkHero = location.pathname === '/' && !scrolled && !menuOpen
-  const isHomeHeroClear = location.pathname === '/' && !scrolled && !menuOpen
+  const isHome = location.pathname === '/'
+  const isHomeHeroClear = isHome && !pastHomeHero && !menuOpen
+  const onDarkHero = isHomeHeroClear
   const navBackground = onDarkHero
     ? (menuOpen
       ? 'rgba(5, 12, 30, 0.76)'
       : 'rgba(5, 12, 30, 0.28)')
-    : (scrolled || menuOpen
-      ? 'rgba(255, 255, 255, 0.70)'
-      : 'rgba(255, 255, 255, 0.58)')
+    : (isHome && pastHomeHero
+      ? 'rgba(255, 255, 255, 0.60)'
+      : (scrolled || menuOpen
+        ? 'rgba(255, 255, 255, 0.70)'
+        : 'rgba(255, 255, 255, 0.58)'))
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 60)
+    const onScroll = () => {
+      const y = window.scrollY
+      setScrolled(y > 60)
+      if (location.pathname === '/') {
+        const heroHeight = window.innerHeight
+        setPastHomeHero(y >= Math.max(0, heroHeight - 8))
+      } else {
+        setPastHomeHero(false)
+      }
+    }
     window.addEventListener('scroll', onScroll)
-    return () => window.removeEventListener('scroll', onScroll)
-  }, [])
+    window.addEventListener('resize', onScroll)
+    onScroll()
+    return () => {
+      window.removeEventListener('scroll', onScroll)
+      window.removeEventListener('resize', onScroll)
+    }
+  }, [location.pathname])
 
   // Close on route change
   useEffect(() => { setMenuOpen(false) }, [location])

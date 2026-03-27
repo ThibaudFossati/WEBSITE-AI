@@ -11,8 +11,6 @@ import { getDisplayFontFamily } from '../lib/typography'
 export default function Home() {
   const heroRef = useRef<HTMLElement>(null)
   const heroTextRef = useRef<HTMLDivElement>(null)
-  const autoSnapDoneRef = useRef(false)
-  const autoSnapRunningRef = useRef(false)
   const [hoveredProject, setHoveredProject] = useState<string | null>(null)
   const [reduceMotion, setReduceMotion] = useState(false)
   const content = useSiteContent()
@@ -48,58 +46,6 @@ export default function Home() {
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
   }, [reduceMotion, isMobile])
-
-  useEffect(() => {
-    const coarsePointer = window.matchMedia('(pointer: coarse)').matches
-
-    // Sur mobile/tactile, on désactive l'auto-snap pour éviter les secousses.
-    if (coarsePointer) return
-
-    const scrollToProjects = () => {
-      if (autoSnapDoneRef.current || autoSnapRunningRef.current) return
-      const projects = document.getElementById('projects')
-      if (!projects) return
-      const targetY = projects.getBoundingClientRect().top + window.scrollY
-
-      const usingLenis = !window.matchMedia('(prefers-reduced-motion: reduce)').matches
-
-      autoSnapRunningRef.current = true
-      autoSnapDoneRef.current = true
-      window.scrollTo({
-        top: Math.max(0, targetY),
-        left: 0,
-        behavior: usingLenis ? 'auto' : 'smooth',
-      })
-
-      window.setTimeout(() => {
-        autoSnapRunningRef.current = false
-      }, 450)
-    }
-
-    const onWheel = (event: WheelEvent) => {
-      if (autoSnapDoneRef.current) return
-      if (window.scrollY > 8) return
-      if (event.deltaY <= 0) return
-      scrollToProjects()
-    }
-
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (autoSnapDoneRef.current) return
-      if (window.scrollY > 8) return
-      const key = event.key
-      if (key === 'ArrowDown' || key === 'PageDown' || key === ' ') {
-        scrollToProjects()
-      }
-    }
-
-    window.addEventListener('wheel', onWheel, { passive: true })
-    window.addEventListener('keydown', onKeyDown)
-
-    return () => {
-      window.removeEventListener('wheel', onWheel)
-      window.removeEventListener('keydown', onKeyDown)
-    }
-  }, [])
 
   return (
     <main style={{ ['--display-font' as string]: displayFont }}>
