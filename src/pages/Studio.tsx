@@ -722,9 +722,34 @@ export default function Studio() {
                     tools: next,
                   }))}
                 />
+                <div className="studio-media-help">
+                  <p>
+                    Utilise des <strong>liens directs</strong> d’images (CDN/Cloudinary/asset public). Évite les liens de pages.
+                  </p>
+                  <p>
+                    Formats recommandés: <strong>AVIF</strong> ou <strong>WebP</strong> (priorité), puis JPG/PNG.
+                    Taille conseillée: cover 2200px de large max, galerie 1800px max.
+                  </p>
+                  <p className="studio-media-help-links">
+                    Liens utiles:
+                    {' '}
+                    <a href="https://cloudinary.com/documentation/image_upload_api_reference" target="_blank" rel="noreferrer">
+                      Cloudinary Upload API
+                    </a>
+                    {' · '}
+                    <a href="https://squoosh.app/" target="_blank" rel="noreferrer">
+                      Squoosh (compression)
+                    </a>
+                    {' · '}
+                    <a href="https://tinypng.com/" target="_blank" rel="noreferrer">
+                      TinyPNG
+                    </a>
+                  </p>
+                </div>
                 <StudioInput
                   label="Cover image URL"
                   value={selectedProject.cover}
+                  placeholder="https://res.cloudinary.com/.../image/upload/.../cover.webp"
                   onChange={e => setProject(project => ({ ...project, cover: e.target.value }))}
                 />
                 <StudioInput
@@ -735,6 +760,7 @@ export default function Studio() {
                 <StudioTextarea
                   label="Gallery URLs (une URL par ligne)"
                   rows={4}
+                  placeholder={'https://.../image-01.webp\nhttps://.../image-02.webp'}
                   value={selectedProject.images.join('\n')}
                   onChange={e => setProject(project => ({
                     ...project,

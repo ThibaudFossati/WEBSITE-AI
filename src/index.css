@@ -565,6 +565,26 @@ body {
   color: rgba(10, 10, 10, 0.38);
 }
 
+.studio-media-help {
+  margin: 2px 0 16px;
+  padding: 14px 16px;
+  border: 1px solid rgba(10, 10, 10, 0.08);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.62);
+  color: rgba(10, 10, 10, 0.72);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.studio-media-help p + p {
+  margin-top: 6px;
+}
+
+.studio-media-help-links a {
+  color: #0a0a0a;
+  text-underline-offset: 3px;
+}
+
 .studio-preview-card {
   border-radius: 28px;
   padding: 24px;
