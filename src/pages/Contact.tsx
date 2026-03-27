@@ -1,27 +1,31 @@
 import { useEffect } from 'react'
+import DisplayText from '../components/DisplayText'
 import TextReveal from '../components/TextReveal'
 import { useSiteContent } from '../hooks/useSiteContent'
+import { getDisplayFontFamily } from '../lib/typography'
 
 export default function Contact() {
   const content = useSiteContent()
   const { contact } = content
+  const displayFont = getDisplayFontFamily(content.design.displayFont)
+  const displayCase = content.design.displayCase
+  const displayEmphasis = content.design.displayEmphasis
   useEffect(() => { window.scrollTo(0, 0) }, [])
 
   return (
-    <main style={{ paddingTop: '120px', minHeight: '100svh', background: '#fff' }}>
+    <main style={{ paddingTop: '120px', minHeight: '100svh', background: '#fff', ['--display-font' as string]: displayFont }}>
       <section style={{ padding: '80px 48px' }}>
         <TextReveal as="h1" delay={100}>
           <span style={{
-            fontFamily: 'Bodoni Moda, serif',
+            fontFamily: 'var(--display-font)',
             fontSize: 'clamp(56px, 9vw, 130px)',
             fontWeight: 300,
             letterSpacing: '-0.03em',
             lineHeight: 0.9,
-            fontStyle: 'italic',
             display: 'block',
             marginBottom: '80px',
           }}>
-            {contact.title}
+            <DisplayText text={contact.title} caseMode={displayCase} emphasisMode={displayEmphasis} />
           </span>
         </TextReveal>
 
@@ -33,7 +37,7 @@ export default function Contact() {
                 Email
               </div>
               <a href={`mailto:${contact.email}`} style={{
-                fontFamily: 'Bodoni Moda, serif',
+                fontFamily: 'var(--display-font)',
                 fontSize: '28px',
                 fontWeight: 300,
                 color: '#0a0a0a',
@@ -51,7 +55,7 @@ export default function Contact() {
                 Téléphone
               </div>
               <a href={`tel:${contact.phone.replace(/\s+/g, '')}`} style={{
-                fontFamily: 'Bodoni Moda, serif',
+                fontFamily: 'var(--display-font)',
                 fontSize: '28px',
                 fontWeight: 300,
                 color: '#0a0a0a',
@@ -66,7 +70,7 @@ export default function Contact() {
               <div style={{ fontSize: '10px', letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(10,10,10,0.3)', marginBottom: '12px' }}>
                 Studio
               </div>
-              <p style={{ fontSize: '15px', lineHeight: 1.7, color: 'rgba(10,10,10,0.6)', fontWeight: 300 }}>
+              <p data-cursor="quiet" style={{ fontSize: '15px', lineHeight: 1.7, color: 'rgba(10,10,10,0.6)', fontWeight: 300 }}>
                 {contact.addressLines.map((line, index) => (
                   <span key={`${line}-${index}`}>
                     {line}
@@ -111,8 +115,8 @@ export default function Contact() {
                 {contact.availabilityLabel}
               </span>
             </div>
-            <p style={{
-              fontFamily: 'Bodoni Moda, serif',
+            <p data-cursor="quiet" style={{
+              fontFamily: 'var(--display-font)',
               fontSize: '24px',
               fontWeight: 300,
               lineHeight: 1.5,

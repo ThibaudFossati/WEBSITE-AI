@@ -31,6 +31,7 @@ export function loadSiteContent(): SiteContent {
       about: { ...cloneDefaultSiteContent().about, ...parsed.about },
       contact: { ...cloneDefaultSiteContent().contact, ...parsed.contact },
       footer: { ...cloneDefaultSiteContent().footer, ...parsed.footer },
+      design: { ...cloneDefaultSiteContent().design, ...parsed.design },
       projects: Array.isArray(parsed.projects)
         ? parsed.projects.map((project, index) => normalizeProject(project, index))
         : cloneDefaultSiteContent().projects.map((project, index) => normalizeProject(project, index)),

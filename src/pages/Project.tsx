@@ -1,11 +1,17 @@
 import { useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
+import DisplayText from '../components/DisplayText'
 import TextReveal from '../components/TextReveal'
 import { useSiteContent } from '../hooks/useSiteContent'
+import { getDisplayFontFamily } from '../lib/typography'
 
 export default function Project() {
   const { id } = useParams<{ id: string }>()
-  const { projects } = useSiteContent()
+  const content = useSiteContent()
+  const { projects } = content
+  const displayFont = getDisplayFontFamily(content.design.displayFont)
+  const displayCase = content.design.displayCase
+  const displayEmphasis = content.design.displayEmphasis
   const publishedProjects = projects
     .filter(project => project.status === 'published')
     .sort((a, b) => a.order - b.order)
@@ -25,7 +31,7 @@ export default function Project() {
   }
 
   return (
-    <main style={{ paddingTop: '120px' }}>
+    <main style={{ paddingTop: '120px', ['--display-font' as string]: displayFont }}>
       {/* Hero */}
       <section style={{ padding: '80px 48px 60px', background: project.color }}>
         <div style={{ marginBottom: '8px' }}>
@@ -35,15 +41,14 @@ export default function Project() {
         </div>
         <TextReveal as="h1" delay={100}>
           <span style={{
-            fontFamily: 'Bodoni Moda, serif',
+            fontFamily: 'var(--display-font)',
             fontSize: 'clamp(48px, 8vw, 120px)',
             fontWeight: 300,
             letterSpacing: '-0.03em',
             lineHeight: 0.9,
-            fontStyle: 'italic',
             display: 'block',
           }}>
-            {project.title}
+            <DisplayText text={project.title} caseMode={displayCase} emphasisMode={displayEmphasis} />
           </span>
         </TextReveal>
         <div style={{ marginTop: '24px', display: 'flex', gap: '12px' }}>
@@ -82,7 +87,7 @@ export default function Project() {
           <div style={{ fontSize: '10px', letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(10,10,10,0.3)', marginBottom: '20px' }}>
             Projet
           </div>
-          <p style={{ fontSize: '18px', lineHeight: 1.8, color: 'rgba(10,10,10,0.7)', fontWeight: 300 }}>
+          <p data-cursor="quiet" style={{ fontSize: '18px', lineHeight: 1.8, color: 'rgba(10,10,10,0.7)', fontWeight: 300 }}>
             {project.description}
           </p>
         </div>
@@ -93,7 +98,7 @@ export default function Project() {
             <div style={{ fontSize: '10px', letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(10,10,10,0.3)', marginBottom: '12px' }}>
               Brief
             </div>
-            <p style={{ fontSize: '14px', lineHeight: 1.8, color: 'rgba(10,10,10,0.55)', fontWeight: 300 }}>
+            <p data-cursor="quiet" style={{ fontSize: '14px', lineHeight: 1.8, color: 'rgba(10,10,10,0.55)', fontWeight: 300 }}>
               {project.brief}
             </p>
           </div>
@@ -177,13 +182,16 @@ export default function Project() {
                 Projet suivant
               </div>
               <span style={{
-                fontFamily: 'Bodoni Moda, serif',
+                fontFamily: 'var(--display-font)',
                 fontSize: 'clamp(28px, 4vw, 56px)',
                 fontWeight: 300,
                 letterSpacing: '-0.02em',
-                fontStyle: 'italic',
               }}>
-                {nextProject.client} — {nextProject.title}
+                <DisplayText
+                  text={`${nextProject.client} — ${nextProject.title}`}
+                  caseMode={displayCase}
+                  emphasisMode={displayEmphasis}
+                />
               </span>
             </div>
             <span style={{ fontSize: '32px', color: 'rgba(10,10,10,0.3)' }}>→</span>

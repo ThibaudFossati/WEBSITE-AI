@@ -2,6 +2,13 @@ import { useEffect, useMemo, useState } from 'react'
 import type { Project } from '../data/projects'
 import { type SiteContent, type SocialLink } from '../data/defaultSiteContent'
 import { cloneDefaultSiteContent, loadSiteContent, resetSiteContent, saveSiteContent } from '../lib/siteContent'
+import DisplayText from '../components/DisplayText'
+import {
+  DISPLAY_CASE_OPTIONS,
+  DISPLAY_EMPHASIS_OPTIONS,
+  DISPLAY_FONT_OPTIONS,
+  getDisplayFontFamily,
+} from '../lib/typography'
 
 type StudioSection = 'home' | 'about' | 'contact' | 'projects' | 'settings'
 
@@ -53,6 +60,38 @@ function StudioTextarea(props: React.TextareaHTMLAttributes<HTMLTextAreaElement>
     <label className="studio-field">
       <span>{label}</span>
       <textarea {...rest} />
+    </label>
+  )
+}
+
+function CsvInput({
+  label,
+  items,
+  onCommit,
+  placeholder,
+}: {
+  label: string
+  items: string[]
+  onCommit: (next: string[]) => void
+  placeholder?: string
+}) {
+  const [draft, setDraft] = useState(items.join(', '))
+
+  useEffect(() => {
+    setDraft(items.join(', '))
+  }, [items])
+
+  return (
+    <label className="studio-field">
+      <span>{label}</span>
+      <input
+        value={draft}
+        placeholder={placeholder}
+        onChange={e => setDraft(e.target.value)}
+        onBlur={() => {
+          onCommit(draft.split(',').map(item => item.trim()).filter(Boolean))
+        }}
+      />
     </label>
   )
 }
@@ -396,25 +435,25 @@ export default function Studio() {
             </StudioCard>
 
             <StudioCard title="Compétences, stats, agences">
-              <StudioInput
+              <CsvInput
                 label="Compétences (séparées par des virgules)"
-                value={content.about.skills.join(', ')}
-                onChange={e => setContent({
+                items={content.about.skills}
+                onCommit={next => setContent({
                   ...content,
                   about: {
                     ...content.about,
-                    skills: e.target.value.split(',').map(item => item.trim()).filter(Boolean),
+                    skills: next,
                   },
                 })}
               />
-              <StudioInput
+              <CsvInput
                 label="Agences (séparées par des virgules)"
-                value={content.about.agencies.join(', ')}
-                onChange={e => setContent({
+                items={content.about.agencies}
+                onCommit={next => setContent({
                   ...content,
                   about: {
                     ...content.about,
-                    agencies: e.target.value.split(',').map(item => item.trim()).filter(Boolean),
+                    agencies: next,
                   },
                 })}
               />
@@ -651,36 +690,36 @@ export default function Studio() {
                     onChange={e => setProject(project => ({ ...project, color: e.target.value }))}
                   />
                 </div>
-                <StudioInput
+                <CsvInput
                   label="Catégories (séparées par des virgules)"
-                  value={selectedProject.category.join(', ')}
-                  onChange={e => setProject(project => ({
+                  items={selectedProject.category}
+                  onCommit={next => setProject(project => ({
                     ...project,
-                    category: e.target.value.split(',').map(item => item.trim()).filter(Boolean),
+                    category: next,
                   }))}
                 />
-                <StudioInput
+                <CsvInput
                   label="Agences (séparées par des virgules)"
-                  value={selectedProject.agencies.join(', ')}
-                  onChange={e => setProject(project => ({
+                  items={selectedProject.agencies}
+                  onCommit={next => setProject(project => ({
                     ...project,
-                    agencies: e.target.value.split(',').map(item => item.trim()).filter(Boolean),
+                    agencies: next,
                   }))}
                 />
-                <StudioInput
+                <CsvInput
                   label="Livrables (séparés par des virgules)"
-                  value={selectedProject.deliverables.join(', ')}
-                  onChange={e => setProject(project => ({
+                  items={selectedProject.deliverables}
+                  onCommit={next => setProject(project => ({
                     ...project,
-                    deliverables: e.target.value.split(',').map(item => item.trim()).filter(Boolean),
+                    deliverables: next,
                   }))}
                 />
-                <StudioInput
+                <CsvInput
                   label="Outils (séparés par des virgules)"
-                  value={selectedProject.tools.join(', ')}
-                  onChange={e => setProject(project => ({
+                  items={selectedProject.tools}
+                  onCommit={next => setProject(project => ({
                     ...project,
-                    tools: e.target.value.split(',').map(item => item.trim()).filter(Boolean),
+                    tools: next,
                   }))}
                 />
                 <StudioInput
@@ -747,6 +786,70 @@ export default function Studio() {
 
         {section === 'settings' && (
           <>
+            <StudioCard title="Typographie Display">
+              <label className="studio-field">
+                <span>Police des gros titres</span>
+                <select
+                  value={content.design.displayFont}
+                  onChange={e => setContent({
+                    ...content,
+                    design: { ...content.design, displayFont: e.target.value as SiteContent['design']['displayFont'] },
+                  })}
+                >
+                  {DISPLAY_FONT_OPTIONS.map(option => (
+                    <option key={option.key} value={option.key}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <div className="studio-grid">
+                <label className="studio-field">
+                  <span>Casse des titres</span>
+                  <select
+                    value={content.design.displayCase}
+                    onChange={e => setContent({
+                      ...content,
+                      design: { ...content.design, displayCase: e.target.value as SiteContent['design']['displayCase'] },
+                    })}
+                  >
+                    {DISPLAY_CASE_OPTIONS.map(option => (
+                      <option key={option.key} value={option.key}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="studio-field">
+                  <span>Style d'emphase</span>
+                  <select
+                    value={content.design.displayEmphasis}
+                    onChange={e => setContent({
+                      ...content,
+                      design: { ...content.design, displayEmphasis: e.target.value as SiteContent['design']['displayEmphasis'] },
+                    })}
+                  >
+                    {DISPLAY_EMPHASIS_OPTIONS.map(option => (
+                      <option key={option.key} value={option.key}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+
+              <div
+                className="studio-font-preview"
+                style={{ fontFamily: getDisplayFontFamily(content.design.displayFont) }}
+              >
+                <DisplayText
+                  text={`${DISPLAY_FONT_OPTIONS.find(option => option.key === content.design.displayFont)?.preview ?? 'Art Direction'}\nStudio InStories`}
+                  caseMode={content.design.displayCase}
+                  emphasisMode={content.design.displayEmphasis}
+                />
+              </div>
+            </StudioCard>
+
             <StudioCard title="Footer">
               <div className="studio-grid">
                 <StudioInput

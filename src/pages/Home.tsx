@@ -1,28 +1,39 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import ParticleCanvas from '../components/ParticleCanvas'
-// import MicroDetails from '../components/MicroDetails'  // ← désactivé pour tests fonds
+import DisplayText from '../components/DisplayText'
 import TextReveal from '../components/TextReveal'
 import Magnet from '../components/Magnet'
 import { useSiteContent } from '../hooks/useSiteContent'
+import { getDisplayFontFamily } from '../lib/typography'
 
 export default function Home() {
   const heroRef = useRef<HTMLElement>(null)
   const heroTextRef = useRef<HTMLDivElement>(null)
   const [hoveredProject, setHoveredProject] = useState<string | null>(null)
+  const [reduceMotion, setReduceMotion] = useState(false)
   const content = useSiteContent()
   const { home, footer } = content
+  const displayFont = getDisplayFontFamily(content.design.displayFont)
+  const displayCase = content.design.displayCase
+  const displayEmphasis = content.design.displayEmphasis
   const projects = content.projects
     .filter(project => project.status === 'published')
     .sort((a, b) => a.order - b.order)
   const ctaLines = home.contactCtaTitle.split('\n')
 
   useEffect(() => {
-    window.scrollTo(0, 0)
+    const media = window.matchMedia('(prefers-reduced-motion: reduce)')
+    const sync = () => setReduceMotion(media.matches)
+    sync()
+    media.addEventListener('change', sync)
+    return () => media.removeEventListener('change', sync)
   }, [])
 
   // ── Parallax hero — texte dérive à 0.38x du scroll ───────────────────────
   useEffect(() => {
+    if (reduceMotion) return
+
     const onScroll = () => {
       if (!heroTextRef.current || !heroRef.current) return
       const heroH = heroRef.current.clientHeight
@@ -32,13 +43,14 @@ export default function Home() {
     }
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
-  }, [])
+  }, [reduceMotion])
 
   return (
-    <main>
+    <main style={{ ['--display-font' as string]: displayFont }}>
       {/* ── HERO ── */}
       <section
         ref={heroRef}
+        className="hero-velvet"
         style={{
           position: 'relative',
           height: '100svh',
@@ -47,23 +59,27 @@ export default function Home() {
           justifyContent: 'flex-end',
           padding: '0 48px 64px',
           overflow: 'hidden',
-          background: '#030608',  // Ink Diffusion — eau noire profonde
+          background: '#040913',
         }}
       >
-        {/* WebGL Refik Anadol particles */}
-        <div style={{ position: 'absolute', inset: 0, zIndex: 0 }}>
-          <ParticleCanvas />
-        </div>
-
-        {/* Micro-détails Canvas 2D overlay — désactivé pour tests */}
-        {/* <div style={{ position: 'absolute', inset: 0, zIndex: 1, pointerEvents: 'none' }}>
-          <MicroDetails />
-        </div> */}
+        {reduceMotion ? (
+          <div
+            className="hero-atmosphere reduced-motion"
+            style={{ position: 'absolute', inset: 0, zIndex: 0 }}
+          >
+            <span className="velvet-base" />
+            <span className="velvet-vignette" />
+          </div>
+        ) : (
+          <div style={{ position: 'absolute', inset: 0, zIndex: 0 }}>
+            <ParticleCanvas />
+          </div>
+        )}
 
         {/* Gradient bottom overlay — très léger sur fond clair */}
         <div style={{
           position: 'absolute', inset: 0, zIndex: 2,
-          background: 'linear-gradient(to top, rgba(10,15,31,0.70) 0%, rgba(10,15,31,0.15) 50%, transparent 75%)',
+          background: 'linear-gradient(to top, rgba(4,8,18,0.78) 0%, rgba(4,8,18,0.28) 44%, rgba(4,8,18,0.08) 68%, rgba(4,8,18,0.04) 100%)',
           pointerEvents: 'none',
         }} />
 
@@ -74,24 +90,23 @@ export default function Home() {
             <TextReveal delay={200} className="block" as="h1">
               <span
                 style={{
-                  fontFamily: 'Bodoni Moda, Georgia, serif',
+                  fontFamily: 'var(--display-font)',
                   fontWeight: 300,
                   fontSize: 'clamp(72px, 10vw, 160px)',
                   lineHeight: 0.9,
                   letterSpacing: '-0.03em',
                   color: '#f0f4ff',  // Void Chrome: texte blanc
                   display: 'block',
-                  fontStyle: 'italic',
                   textShadow: '0 2px 48px rgba(180,210,255,0.20)',
                 }}
               >
-                {home.heroLine1}
+                <DisplayText text={home.heroLine1} caseMode={displayCase} emphasisMode={displayEmphasis} />
               </span>
             </TextReveal>
             <TextReveal delay={350} className="block" as="span">
               <span
                 style={{
-                  fontFamily: 'Bodoni Moda, Georgia, serif',
+                  fontFamily: 'var(--display-font)',
                   fontWeight: 300,
                   fontSize: 'clamp(72px, 10vw, 160px)',
                   lineHeight: 0.9,
@@ -101,7 +116,7 @@ export default function Home() {
                   textShadow: '0 2px 48px rgba(100,180,255,0.25)',
                 }}
               >
-                {home.heroLine2}
+                <DisplayText text={home.heroLine2} caseMode={displayCase} emphasisMode={displayEmphasis} />
               </span>
             </TextReveal>
           </div>
@@ -180,14 +195,13 @@ export default function Home() {
           <TextReveal as="h2">
             <span
               style={{
-                fontFamily: 'Bodoni Moda, serif',
+                fontFamily: 'var(--display-font)',
                 fontSize: 'clamp(36px, 5vw, 64px)',
                 fontWeight: 300,
                 letterSpacing: '-0.02em',
-                fontStyle: 'italic',
               }}
             >
-              {home.projectsTitle}
+              <DisplayText text={home.projectsTitle} caseMode={displayCase} emphasisMode={displayEmphasis} />
             </span>
           </TextReveal>
           <TextReveal as="span">
@@ -210,12 +224,13 @@ export default function Home() {
             <Link
               key={project.id}
               to={`/projects/${project.id}`}
+              data-cursor="hover"
               style={{ textDecoration: 'none', color: 'inherit' }}
               onMouseEnter={() => setHoveredProject(project.id)}
               onMouseLeave={() => setHoveredProject(null)}
             >
               <div
-                className="project-card"
+                className="project-card project-row"
                 style={{
                   display: 'grid',
                   gridTemplateColumns: '64px 1fr 1fr auto',
@@ -255,14 +270,14 @@ export default function Home() {
                   </div>
                   <div
                     style={{
-                      fontFamily: 'Bodoni Moda, serif',
+                      fontFamily: 'var(--display-font)',
                       fontSize: 'clamp(22px, 3vw, 36px)',
                       fontWeight: 300,
                       letterSpacing: '-0.01em',
                       lineHeight: 1.1,
                     }}
                   >
-                    {project.title}
+                    <DisplayText text={project.title} caseMode={displayCase} emphasisMode={displayEmphasis} />
                   </div>
                 </div>
 
@@ -287,7 +302,7 @@ export default function Home() {
                 </div>
 
                 {/* Year + arrow */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '24px', paddingRight: '12px' }}>
                   <span style={{ fontSize: '11px', color: 'rgba(10,10,10,0.3)', letterSpacing: '0.08em' }}>
                     {project.year}
                   </span>
@@ -333,21 +348,21 @@ export default function Home() {
             <TextReveal as="h2" delay={100}>
               <span
                 style={{
-                  fontFamily: 'Bodoni Moda, serif',
+                  fontFamily: 'var(--display-font)',
                   fontSize: 'clamp(40px, 5vw, 72px)',
                   fontWeight: 300,
                   letterSpacing: '-0.02em',
                   lineHeight: 1.0,
-                  fontStyle: 'italic',
                   color: '#ffffff',
                   display: 'block',
                 }}
               >
-                {home.servicesTitle}
+                <DisplayText text={home.servicesTitle} caseMode={displayCase} emphasisMode={displayEmphasis} />
               </span>
             </TextReveal>
             <TextReveal as="p" delay={300}>
               <span
+                data-cursor="quiet"
                 style={{
                   fontSize: '14px',
                   lineHeight: 1.9,
@@ -367,6 +382,7 @@ export default function Home() {
             {home.services.map((service, i) => (
               <div
                 key={service.name}
+                className="service-row"
                 style={{
                   display: 'flex',
                   justifyContent: 'space-between',
@@ -376,15 +392,15 @@ export default function Home() {
                   gap: '32px',
                 }}
               >
-                <div>
-                  <div style={{ fontWeight: 400, fontSize: '16px', color: '#fff', marginBottom: '4px' }}>
+                <div className="service-row-content">
+                  <div className="service-row-title" style={{ fontWeight: 400, fontSize: '16px', color: '#fff', marginBottom: '4px' }}>
                     {service.name}
                   </div>
-                  <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.3)', letterSpacing: '0.06em' }}>
+                  <div className="service-row-desc" style={{ fontSize: '12px', color: 'rgba(255,255,255,0.3)', letterSpacing: '0.06em' }}>
                     {service.desc}
                   </div>
                 </div>
-                <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.2)', letterSpacing: '0.1em' }}>
+                <span className="service-row-index" style={{ fontSize: '11px', color: 'rgba(255,255,255,0.2)', letterSpacing: '0.1em' }}>
                   {String(i + 1).padStart(2, '0')}
                 </span>
               </div>
@@ -407,6 +423,7 @@ export default function Home() {
       >
         <TextReveal as="p">
           <span
+            data-cursor="quiet"
             style={{
               fontSize: '11px',
               letterSpacing: '0.2em',
@@ -420,24 +437,25 @@ export default function Home() {
 
         <TextReveal delay={150} as="h2">
           <span
+            data-cursor="quiet"
             style={{
-              fontFamily: 'Bodoni Moda, serif',
+              fontFamily: 'var(--display-font)',
               fontSize: 'clamp(32px, 5vw, 72px)',
               fontWeight: 300,
               letterSpacing: '-0.02em',
               lineHeight: 1.15,
-              fontStyle: 'italic',
               maxWidth: '800px',
               display: 'block',
             }}
           >
-            {home.aboutQuote}
+            <DisplayText text={home.aboutQuote} caseMode={displayCase} emphasisMode={displayEmphasis} />
           </span>
         </TextReveal>
 
         <TextReveal delay={300} as="div">
           <Link
             to="/about"
+            data-cursor="hover"
             style={{
               display: 'inline-flex',
               alignItems: 'center',
@@ -470,20 +488,14 @@ export default function Home() {
         <TextReveal as="h2">
           <span
             style={{
-              fontFamily: 'Bodoni Moda, serif',
+              fontFamily: 'var(--display-font)',
               fontSize: 'clamp(40px, 6vw, 96px)',
               fontWeight: 300,
               letterSpacing: '-0.03em',
               lineHeight: 0.95,
-              fontStyle: 'italic',
             }}
           >
-            {ctaLines.map((line, index) => (
-              <span key={`${line}-${index}`}>
-                {line}
-                {index < ctaLines.length - 1 ? <br /> : null}
-              </span>
-            ))}
+            <DisplayText text={ctaLines.join('\n')} caseMode={displayCase} emphasisMode={displayEmphasis} />
           </span>
         </TextReveal>
 
@@ -491,6 +503,7 @@ export default function Home() {
           <Magnet strength={0.5} radius={160}>
             <Link
               to="/contact"
+              data-cursor="hover"
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',

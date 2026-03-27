@@ -5,128 +5,124 @@ in vec2 a_pos;
 void main() { gl_Position = vec4(a_pos, 0.0, 1.0); }
 `
 
-// ── Ink Diffusion 3D ──────────────────────────────────────────────────────
-// Encre bioluminescente qui se diffuse dans l'eau sombre en 3D
-// 4 couches de profondeur avec parallax + densité gaussienne
-// Mouvement organique et imprévisible — jamais la même forme
+// Shader Home basé sur colormap + warp fBM fourni par l'utilisateur.
+// Adapté en WebGL2 avec interaction souris et grading bleu premium.
 const FRAG = `#version 300 es
 precision highp float;
 
 uniform float u_t;
-uniform vec2  u_mouse;
-uniform vec2  u_res;
+uniform vec2 u_mouse;
+uniform vec2 u_res;
+
 out vec4 fragColor;
 
-// ── Hash sans sin() ───────────────────────────────────────────────────────
-float hash(float x, float y) {
-  vec2 p = fract(vec2(x,y)*vec2(.1031,.1030));
-  p += dot(p,p.yx+33.33);
-  return fract((p.x+p.y)*p.x);
+float colormap_red(float x) {
+  if (x < 0.0) {
+    return 54.0 / 255.0;
+  } else if (x < 20049.0 / 82979.0) {
+    return (829.79 * x + 54.51) / 255.0;
+  } else {
+    return 1.0;
+  }
 }
-float sn(vec2 p) {
-  vec2 i=floor(p), f=fract(p), u=f*f*(3.-2.*f);
-  return mix(mix(hash(i.x,i.y), hash(i.x+1.,i.y), u.x),
-             mix(hash(i.x,i.y+1.), hash(i.x+1.,i.y+1.), u.x), u.y);
+
+float colormap_green(float x) {
+  if (x < 20049.0 / 82979.0) {
+    return 0.0;
+  } else if (x < 327013.0 / 810990.0) {
+    return (8546482679670.0 / 10875673217.0 * x - 2064961390770.0 / 10875673217.0) / 255.0;
+  } else if (x <= 1.0) {
+    return (103806720.0 / 483977.0 * x + 19607415.0 / 483977.0) / 255.0;
+  } else {
+    return 1.0;
+  }
 }
-// fBm 4 octaves — plus de détails pour l'encre
+
+float colormap_blue(float x) {
+  if (x < 0.0) {
+    return 54.0 / 255.0;
+  } else if (x < 7249.0 / 82979.0) {
+    return (829.79 * x + 54.51) / 255.0;
+  } else if (x < 20049.0 / 82979.0) {
+    return 127.0 / 255.0;
+  } else if (x < 327013.0 / 810990.0) {
+    return (792.0224934136139 * x - 64.36479073560233) / 255.0;
+  } else {
+    return 1.0;
+  }
+}
+
+vec4 colormap(float x) {
+  return vec4(colormap_red(x), colormap_green(x), colormap_blue(x), 1.0);
+}
+
+float rand(vec2 n) {
+  return fract(sin(dot(n, vec2(12.9898, 4.1414))) * 43758.5453);
+}
+
+float noise(vec2 p){
+  vec2 ip = floor(p);
+  vec2 u = fract(p);
+  u = u*u*(3.0-2.0*u);
+
+  float res = mix(
+      mix(rand(ip), rand(ip + vec2(1.0, 0.0)), u.x),
+      mix(rand(ip + vec2(0.0, 1.0)), rand(ip + vec2(1.0, 1.0)), u.x),
+      u.y
+  );
+  return res * res;
+}
+
+const mat2 mtx = mat2(0.80, 0.60, -0.60, 0.80);
+
 float fbm(vec2 p) {
-  float v=0.,a=.5,f=1.,tot=0.;
-  for(int i=0;i<4;i++){v+=sn(p*f)*a;tot+=a;f*=2.;a*=.48;}
-  return v/tot;
+  float f = 0.0;
+  f += 0.500000 * noise(p + u_t); p = mtx * p * 2.02;
+  f += 0.031250 * noise(p);       p = mtx * p * 2.01;
+  f += 0.250000 * noise(p);       p = mtx * p * 2.03;
+  f += 0.125000 * noise(p);       p = mtx * p * 2.01;
+  f += 0.062500 * noise(p);       p = mtx * p * 2.04;
+  f += 0.015625 * noise(p + sin(u_t));
+  return f / 0.96875;
 }
 
-// ── Domain warp triple — très organique ──────────────────────────────────
-vec2 warp(vec2 p, float t) {
-  vec2 q = vec2(fbm(p + vec2(t*.007, .31)),
-                fbm(p + vec2(5.2 + t*.006, 1.3)));
-  vec2 r = vec2(fbm(p + 2.2*q + vec2(1.7 + t*.005, 9.2)),
-                fbm(p + 2.2*q + vec2(8.3, 2.8 - t*.004)));
-  return p + 2.4*r;
-}
-
-// ── Densité d'encre — seuil soft : seulement le top ~25% du fBm ──────────
-// Crée des masses isolées sur fond noir (pas de brouillard global)
-float inkDensity(vec2 p, float t, float freq, float offset) {
-  vec2 wp = warp(p * freq, t);
-  float n  = fbm(wp + offset);
-
-  // Seuil : 0 en dessous de .48, monte vers 1 au-dessus de .70
-  // → seulement les crêtes du bruit deviennent encre
-  float d = smoothstep(.48, .72, n);
-  return d * d; // carré = encore plus contrasté
-}
-
-// ── Tendrons : filaments fins autour des masses ───────────────────────────
-float tendril(vec2 p, float t, float freq) {
-  vec2 wp = warp(p * freq, t * 1.3);
-  float n  = fbm(wp);
-  // Crêtes fines aux iso-lignes
-  float d  = abs(fract(n * 4.5 + .5) * 2. - 1.);
-  return smoothstep(.12, .0, d) * .4;
+float pattern(vec2 p) {
+  return fbm(p + fbm(p + fbm(p)));
 }
 
 void main() {
-  vec2 uv  = vec2(gl_FragCoord.x, u_res.y - gl_FragCoord.y) / u_res;
-  float asp = u_res.x / u_res.y;
-  vec2  p   = vec2(uv.x * asp, uv.y);
-  vec2  ctr = vec2(asp*.5, .5);
+  vec2 fragCoord = gl_FragCoord.xy;
+  vec2 uv = fragCoord / u_res.xy;
+  vec2 p = (fragCoord * 2.0 - u_res.xy) / u_res.y;
+  vec2 mouse = (u_mouse * 2.0 - 1.0);
 
-  // ── Mouse : distorsion locale (goutte d'encre) ───────────────────────
-  vec2  mp    = vec2(u_mouse.x * asp, u_mouse.y);
-  vec2  mDiff = p - mp;
-  float mDist = length(mDiff);
-  // Déplace légèrement les couches vers/autour du curseur
-  vec2  mPush = mDiff * exp(-mDist*mDist*6.) * .08;
+  float md = length(p - mouse * vec2(u_res.x / u_res.y, 1.0));
+  float mGlow = exp(-md * md * 2.0);
 
-  // ── 4 couches de profondeur — parallax ────────────────────────────────
-  // Chaque couche : décalage parallax différent, vitesse différente
-  vec2 p0 = p - (mp - ctr)*.000 + mPush*.10; // fond fixe
-  vec2 p1 = p - (mp - ctr)*.020 + mPush*.25; // profond
-  vec2 p2 = p - (mp - ctr)*.055 + mPush*.55; // moyen
-  vec2 p3 = p - (mp - ctr)*.100 + mPush*.90; // avant-plan
+  vec2 flow = p;
+  flow += mouse * 0.35;
+  flow += vec2(sin(u_t * 0.24), cos(u_t * 0.19)) * 0.12;
+  flow += vec2(p.y, -p.x) * (mGlow * 0.12);
+  flow *= 0.92;
 
-  // ── Densités sharpenées — concentre la lumière aux cœurs ────────────
-  float d0 = pow(inkDensity(p0, u_t * .40, .70, 0.0),  3.5);
-  float d1 = pow(inkDensity(p1, u_t * .60, .95, 3.71), 2.8);
-  float d2 = pow(inkDensity(p2, u_t * .82, 1.25, 7.13),2.2);
-  float d3 = pow(inkDensity(p3, u_t * 1.0, 1.60, 1.94),2.0);
+  float shade = pattern(flow * 1.25 + vec2(u_t * 0.06, -u_t * 0.04));
+  shade += mGlow * 0.08;
+  shade = clamp(shade, 0.0, 1.0);
 
-  float ten = tendril(p2, u_t, 1.8) + tendril(p3, u_t, 2.4)*.6;
+  vec3 cm = colormap(shade).rgb;
 
-  // ── Palette sombre — eau noire, encre lumineuse par couches ─────────
-  vec3 col0  = vec3(.005, .003, .022); // fond quasi-noir / violet nuit
-  vec3 col1  = vec3(.008, .018, .100); // bleu nuit profond
-  vec3 col2  = vec3(.020, .090, .340); // bleu moyen (pas trop vif)
-  vec3 col3  = vec3(.060, .240, .580); // bleu-cyan avant-plan
-  vec3 colT  = vec3(.280, .600, .900); // filaments — cyan
-  vec3 colHot= vec3(.600, .860, 1.000);// cœurs seulement — blanc-cyan
+  vec3 deepBlue = vec3(0.010, 0.028, 0.090);
+  vec3 electricBlue = vec3(0.185, 0.465, 1.000);
+  vec3 cyanBlue = vec3(0.175, 0.700, 1.000);
+  vec3 col = mix(deepBlue, cm * vec3(0.62, 0.86, 1.22), pow(shade, 0.9));
+  col += electricBlue * smoothstep(0.62, 1.0, shade) * 0.16;
+  col += cyanBlue * mGlow * 0.12;
 
-  // ── Composition sur noir pur ──────────────────────────────────────────
-  vec3 col = vec3(0.0);
+  float vignette = smoothstep(1.35, 0.18, length((uv * 2.0 - 1.0) * vec2(1.05, 1.12)));
+  col *= mix(0.50, 1.0, vignette);
 
-  // Couches de base — max blending, pas d'accumulation
-  col = max(col, col0 * d0);
-  col = max(col, col1 * d1);
-  col = max(col, col2 * d2);
-  col = max(col, col3 * d3);
-
-  // Cœur lumineux — seulement aux intersections denses (rare)
-  col += colHot * pow(d2 * d3, 1.2) * 1.6;
-
-  // Filaments — visibles seulement là où il y a de l'encre
-  col += colT * ten * max(d2, d3) * .60;
-
-  // ── Halo souris ───────────────────────────────────────────────────────
-  float mGlow = exp(-mDist * mDist * 5.0) * .35;
-  col += col3  * mGlow;
-  col += colHot * exp(-mDist * mDist * 25.) * .30;
-
-  // ── Vignette quadratique — bords très sombres ─────────────────────────
-  float vig = 1. - smoothstep(.15, 1.08, length(p - ctr) * .88);
-  col *= vig * vig;
-
-  // ── Simple clamp — pas de tone mapping qui lève les noirs ────────────
-  col = clamp(col, 0., 1.);
+  col = col / (col + vec3(1.0));
+  col = pow(col, vec3(0.94));
 
   fragColor = vec4(col, 1.0);
 }
@@ -134,12 +130,12 @@ void main() {
 
 export default function ParticleCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const rafRef    = useRef<number>(0)
+  const rafRef = useRef<number>(0)
 
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
-    const gl = canvas.getContext('webgl2')
+    const gl = canvas.getContext('webgl2', { alpha: true, antialias: false })
     if (!gl) return
 
     const compile = (type: number, src: string) => {
@@ -164,9 +160,9 @@ export default function ParticleCanvas() {
     gl.enableVertexAttribArray(aPos)
     gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0)
 
-    const uT     = gl.getUniformLocation(prog, 'u_t')
+    const uT = gl.getUniformLocation(prog, 'u_t')
     const uMouse = gl.getUniformLocation(prog, 'u_mouse')
-    const uRes   = gl.getUniformLocation(prog, 'u_res')
+    const uRes = gl.getUniformLocation(prog, 'u_res')
 
     let cw = 0, ch = 0
     const setSize = () => {
@@ -183,13 +179,19 @@ export default function ParticleCanvas() {
     ro.observe(canvas.parentElement || canvas)
     setSize()
 
-    const mouse = { x: .5, y: .5 }
+    const mouse = { x: 0.5, y: 0.5 }
+    const targetMouse = { x: 0.5, y: 0.5 }
     const onMove = (e: MouseEvent) => {
       const r = canvas.getBoundingClientRect()
-      mouse.x = (e.clientX - r.left) / r.width
-      mouse.y = (e.clientY - r.top)  / r.height
+      targetMouse.x = (e.clientX - r.left) / r.width
+      targetMouse.y = (e.clientY - r.top) / r.height
     }
     window.addEventListener('mousemove', onMove)
+    const onLeave = () => {
+      targetMouse.x = 0.5
+      targetMouse.y = 0.5
+    }
+    window.addEventListener('mouseout', onLeave)
 
     let visible = true
     const io = new IntersectionObserver(
@@ -197,24 +199,29 @@ export default function ParticleCanvas() {
     )
     io.observe(canvas)
 
-    let t = 0
-    const draw = () => {
+    const start = performance.now()
+    const draw = (now: number) => {
       rafRef.current = requestAnimationFrame(draw)
       if (!visible) return
-      t += 0.007  // lent et organique
+
+      mouse.x += (targetMouse.x - mouse.x) * 0.08
+      mouse.y += (targetMouse.y - mouse.y) * 0.08
+
+      const t = (now - start) * 0.001
 
       gl.uniform1f(uT,    t)
       gl.uniform2f(uMouse, mouse.x, mouse.y)
       gl.uniform2f(uRes,   cw, ch)
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
     }
-    draw()
+    rafRef.current = requestAnimationFrame(draw)
 
     return () => {
       cancelAnimationFrame(rafRef.current)
       io.disconnect()
       ro.disconnect()
       window.removeEventListener('mousemove', onMove)
+      window.removeEventListener('mouseout', onLeave)
     }
   }, [])
 

@@ -1,23 +1,120 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
+import DisplayText from '../components/DisplayText'
 import { useSiteContent } from '../hooks/useSiteContent'
+import { getDisplayFontFamily, type DisplayCaseMode, type DisplayEmphasisMode } from '../lib/typography'
 
 type Variant = 'A' | 'B' | 'C'
 
-const BODONI = 'Bodoni Moda, Georgia, serif'
+const BODONI = 'var(--display-font)'
 const INTER  = 'Inter, Helvetica Neue, sans-serif'
+
+function splitStatValue(value: string): { numeric: number | null; suffix: string } {
+  const match = value.trim().match(/^(\d+)(.*)$/)
+  if (!match) return { numeric: null, suffix: '' }
+  return { numeric: parseInt(match[1], 10), suffix: match[2] ?? '' }
+}
+
+function HoverStat({ value, label }: { value: string; label: string }) {
+  const [displayValue, setDisplayValue] = useState(value)
+  const [hovered, setHovered] = useState(false)
+  const rafRef = useRef<number | null>(null)
+
+  useEffect(() => {
+    setDisplayValue(value)
+  }, [value])
+
+  useEffect(() => {
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current)
+    }
+  }, [])
+
+  const animateValue = () => {
+    const { numeric, suffix } = splitStatValue(value)
+    if (numeric === null) return
+
+    if (rafRef.current) cancelAnimationFrame(rafRef.current)
+    const duration = 680
+    const start = performance.now()
+
+    const step = (now: number) => {
+      const progress = Math.min(1, (now - start) / duration)
+      const eased = 1 - Math.pow(1 - progress, 3)
+      const current = Math.max(0, Math.round(numeric * eased))
+      setDisplayValue(`${current}${suffix}`)
+
+      if (progress < 1) {
+        rafRef.current = requestAnimationFrame(step)
+      } else {
+        rafRef.current = null
+        setDisplayValue(value)
+      }
+    }
+
+    setDisplayValue(`0${suffix}`)
+    rafRef.current = requestAnimationFrame(step)
+  }
+
+  return (
+    <div
+      onMouseEnter={() => {
+        setHovered(true)
+        animateValue()
+      }}
+      onMouseLeave={() => {
+        setHovered(false)
+        setDisplayValue(value)
+      }}
+      style={{
+        textAlign: 'right',
+        padding: '14px 18px',
+        borderRadius: '14px',
+        border: '1px solid rgba(10,10,10,0.10)',
+        background: hovered ? 'rgba(10,10,10,0.03)' : 'transparent',
+        transform: hovered ? 'translateY(-3px)' : 'translateY(0)',
+        transition: 'transform 0.25s ease, background 0.25s ease, border-color 0.25s ease',
+      }}
+    >
+      <div style={{
+        fontFamily: BODONI,
+        fontStyle: 'italic',
+        fontSize: 'clamp(52px, 6vw, 90px)',
+        fontWeight: 400,
+        letterSpacing: '-0.04em',
+        color: '#0a0a0a',
+        lineHeight: 0.9,
+      }}>
+        {displayValue}
+      </div>
+      <div style={{
+        fontFamily: INTER,
+        fontSize: '11px',
+        letterSpacing: '0.20em',
+        textTransform: 'uppercase',
+        color: 'rgba(10,10,10,0.38)',
+        marginTop: '10px',
+      }}>
+        {label}
+      </div>
+    </div>
+  )
+}
 
 // ─── A — Monumental ──────────────────────────────────────────────────────────
 function VariantA({
   name,
   roleLine,
   estLabel,
+  caseMode,
+  emphasisMode,
 }: {
   name: string
   roleLine: string
   estLabel: string
+  caseMode: DisplayCaseMode
+  emphasisMode: DisplayEmphasisMode
 }) {
-  const nameLines = name.split('\n')
   return (
     <section style={{
       height: '100svh',
@@ -31,7 +128,6 @@ function VariantA({
     }}>
       <h1 style={{
         fontFamily: BODONI,
-        fontStyle: 'italic',
         fontWeight: 400,
         fontSize: 'clamp(100px, 18vw, 280px)',
         lineHeight: 0.88,
@@ -41,14 +137,9 @@ function VariantA({
         whiteSpace: 'nowrap',
         userSelect: 'none',
       }}>
-        {nameLines.map((line, index) => (
-          <span key={`${line}-${index}`}>
-            {line}
-            {index < nameLines.length - 1 ? <br /> : null}
-          </span>
-        ))}
+        <DisplayText text={name} caseMode={caseMode} emphasisMode={emphasisMode} />
       </h1>
-      <p style={{
+      <p data-cursor="quiet" style={{
         fontFamily: INTER,
         fontWeight: 300,
         fontSize: '11px',
@@ -82,13 +173,16 @@ function VariantB({
   darkLabel,
   intro,
   skills,
+  caseMode,
+  emphasisMode,
 }: {
   name: string
   darkLabel: string
   intro: string
   skills: string[]
+  caseMode: DisplayCaseMode
+  emphasisMode: DisplayEmphasisMode
 }) {
-  const nameLines = name.split('\n')
   return (
     <section style={{
       height: '100svh',
@@ -119,7 +213,7 @@ function VariantB({
           background: 'radial-gradient(ellipse, rgba(0,160,180,0.20) 0%, transparent 70%)',
           filter: 'blur(48px)',
         }}/>
-        <p style={{
+        <p data-cursor="quiet" style={{
           fontFamily: INTER, fontSize: '10px',
           letterSpacing: '0.22em', textTransform: 'uppercase',
           color: 'rgba(255,255,255,0.22)', position: 'relative', zIndex: 1,
@@ -139,22 +233,16 @@ function VariantB({
       }}>
         <h1 style={{
           fontFamily: BODONI,
-          fontStyle: 'italic',
           fontWeight: 400,
           fontSize: 'clamp(52px, 6.5vw, 108px)',
           lineHeight: 0.92,
           letterSpacing: '-0.03em',
           color: '#0a0a0a',
         }}>
-          {nameLines.map((line, index) => (
-            <span key={`${line}-${index}`}>
-              {line}
-              {index < nameLines.length - 1 ? <br /> : null}
-            </span>
-          ))}
+          <DisplayText text={name} caseMode={caseMode} emphasisMode={emphasisMode} />
         </h1>
         <div style={{ width: '40px', height: '1px', background: 'rgba(10,10,10,0.15)' }}/>
-        <p style={{
+        <p data-cursor="quiet" style={{
           fontFamily: INTER, fontWeight: 300,
           fontSize: '15px', lineHeight: 1.85,
           color: 'rgba(10,10,10,0.55)', maxWidth: '340px',
@@ -184,13 +272,16 @@ function VariantC({
   quote,
   stats,
   agencies,
+  caseMode,
+  emphasisMode,
 }: {
   name: string
   quote: string
   stats: { value: string; label: string }[]
   agencies: string[]
+  caseMode: DisplayCaseMode
+  emphasisMode: DisplayEmphasisMode
 }) {
-  const nameLines = name.split('\n')
   const quoteLines = quote.split('\n')
   return (
     <section style={{
@@ -204,23 +295,17 @@ function VariantC({
     }}>
       <h1 style={{
         fontFamily: BODONI,
-        fontStyle: 'italic',
         fontWeight: 400,
         fontSize: 'clamp(72px, 13vw, 200px)',
         lineHeight: 0.88,
         letterSpacing: '-0.04em',
         color: '#0a0a0a',
       }}>
-        {nameLines.map((line, index) => (
-          <span key={`${line}-${index}`}>
-            {line}
-            {index < nameLines.length - 1 ? <br /> : null}
-          </span>
-        ))}
+        <DisplayText text={name} caseMode={caseMode} emphasisMode={emphasisMode} />
       </h1>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '80px', alignItems: 'end' }}>
-        <p style={{
+        <p data-cursor="quiet" style={{
           fontFamily: INTER,
           fontWeight: 300,
           fontSize: 'clamp(17px, 2vw, 26px)',
@@ -236,29 +321,21 @@ function VariantC({
           ))}
         </p>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', alignItems: 'flex-end' }}>
-          <div style={{ display: 'flex', gap: '36px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '28px', alignItems: 'flex-end' }}>
+          <div style={{ display: 'flex', gap: '18px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
             {stats.map(stat => (
-              <div key={stat.label} style={{ textAlign: 'right' }}>
-                <div style={{
-                  fontFamily: BODONI, fontStyle: 'italic',
-                  fontSize: '34px', fontWeight: 400,
-                  letterSpacing: '-0.03em', color: '#0a0a0a', lineHeight: 1,
-                }}>{stat.value}</div>
-                <div style={{
-                  fontFamily: INTER, fontSize: '9px',
-                  letterSpacing: '0.16em', textTransform: 'uppercase',
-                  color: 'rgba(10,10,10,0.3)', marginTop: '4px',
-                }}>{stat.label}</div>
-              </div>
+              <HoverStat key={stat.label} value={stat.value} label={stat.label} />
             ))}
           </div>
-          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+          <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap', justifyContent: 'flex-end', maxWidth: '560px' }}>
             {agencies.map(a => (
               <span key={a} style={{
-                fontFamily: INTER, fontSize: '9px',
-                letterSpacing: '0.14em', textTransform: 'uppercase',
-                color: 'rgba(10,10,10,0.28)',
+                fontFamily: INTER,
+                fontSize: '10px',
+                letterSpacing: '0.16em',
+                textTransform: 'uppercase',
+                color: 'rgba(10,10,10,0.34)',
+                padding: '4px 8px',
               }}>{a}</span>
             ))}
           </div>
@@ -271,12 +348,15 @@ function VariantC({
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default function About() {
   const content = useSiteContent()
+  const displayFont = getDisplayFontFamily(content.design.displayFont)
+  const displayCase = content.design.displayCase
+  const displayEmphasis = content.design.displayEmphasis
   const [variant, setVariant] = useState<Variant>(content.about.defaultVariant)
   useEffect(() => { window.scrollTo(0, 0) }, [])
   useEffect(() => { setVariant(content.about.defaultVariant) }, [content.about.defaultVariant])
 
   return (
-    <main style={{ paddingTop: '80px' }}>
+    <main style={{ paddingTop: '80px', ['--display-font' as string]: displayFont }}>
 
       {/* Switcher */}
       <div style={{
@@ -307,6 +387,8 @@ export default function About() {
           name={content.about.name}
           roleLine={content.about.roleLine}
           estLabel={content.about.estLabel}
+          caseMode={displayCase}
+          emphasisMode={displayEmphasis}
         />
       )}
       {variant === 'B' && (
@@ -315,6 +397,8 @@ export default function About() {
           darkLabel={content.about.splitDarkLabel}
           intro={content.about.splitIntro}
           skills={content.about.skills}
+          caseMode={displayCase}
+          emphasisMode={displayEmphasis}
         />
       )}
       {variant === 'C' && (
@@ -323,6 +407,8 @@ export default function About() {
           quote={content.about.manifestoQuote}
           stats={content.about.stats}
           agencies={content.about.agencies}
+          caseMode={displayCase}
+          emphasisMode={displayEmphasis}
         />
       )}
 
@@ -331,8 +417,8 @@ export default function About() {
         padding: '80px 48px', background: '#f8f6f2',
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
       }}>
-        <p style={{ fontFamily: BODONI, fontStyle: 'italic', fontSize: 'clamp(28px, 4vw, 52px)', fontWeight: 400, color: '#0a0a0a' }}>
-          {content.about.ctaTitle}
+        <p style={{ fontFamily: BODONI, fontSize: 'clamp(28px, 4vw, 52px)', fontWeight: 400, color: '#0a0a0a' }}>
+          <DisplayText text={content.about.ctaTitle} caseMode={displayCase} emphasisMode={displayEmphasis} />
         </p>
         <Link to="/contact" style={{
           fontFamily: INTER, fontSize: '11px', letterSpacing: '0.15em',

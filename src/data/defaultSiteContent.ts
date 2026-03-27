@@ -1,4 +1,5 @@
 import { projects as defaultProjects, type Project } from './projects'
+import type { DisplayCaseMode, DisplayEmphasisMode, DisplayFontKey } from '../lib/typography'
 
 export interface ServiceItem {
   name: string
@@ -62,11 +63,18 @@ export interface FooterContent {
   socials: SocialLink[]
 }
 
+export interface DesignContent {
+  displayFont: DisplayFontKey
+  displayCase: DisplayCaseMode
+  displayEmphasis: DisplayEmphasisMode
+}
+
 export interface SiteContent {
   home: HomeContent
   about: AboutContent
   contact: ContactContent
   footer: FooterContent
+  design: DesignContent
   projects: Project[]
 }
 
@@ -124,7 +132,7 @@ export const defaultSiteContent: SiteContent = {
       { label: 'TikTok', href: 'https://tiktok.com/@ghost.in.gloss' },
       { label: 'LinkedIn', href: '#' },
     ],
-    availabilityLabel: 'Disponible pour de nouveaux projets',
+    availabilityLabel: 'Disponible',
     availabilityText: 'Parlez-moi de votre projet, et créons ensemble quelque chose de remarquable.',
   },
   footer: {
@@ -136,6 +144,11 @@ export const defaultSiteContent: SiteContent = {
       { label: 'TikTok', href: 'https://tiktok.com/@ghost.in.gloss' },
       { label: 'LinkedIn', href: '#' },
     ],
+  },
+  design: {
+    displayFont: 'bodoni',
+    displayCase: 'default',
+    displayEmphasis: 'none',
   },
   projects: defaultProjects,
 }

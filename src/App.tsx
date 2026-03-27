@@ -15,6 +15,27 @@ export default function App() {
 
   // ── Lenis smooth scroll — inertie forte ──────────────────────────────────
   useEffect(() => {
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+    if (reduceMotion) {
+      const onScroll = () => {
+        const doc = document.documentElement
+        const max = Math.max(1, doc.scrollHeight - window.innerHeight)
+        const progress = window.scrollY / max
+        if (progressRef.current) {
+          progressRef.current.style.transform = `scaleX(${Math.min(1, Math.max(0, progress))})`
+        }
+      }
+
+      onScroll()
+      window.addEventListener('scroll', onScroll, { passive: true })
+      window.addEventListener('resize', onScroll)
+      return () => {
+        window.removeEventListener('scroll', onScroll)
+        window.removeEventListener('resize', onScroll)
+      }
+    }
+
     const lenis = new Lenis({
       duration: 1.4,
       easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
@@ -43,10 +64,20 @@ export default function App() {
     }
   }, [])
 
-  // Scroll to top on route change
+  // Scroll handling on route/hash change
   useEffect(() => {
-    window.scrollTo(0, 0)
-  }, [location.pathname])
+    const hash = location.hash.replace('#', '')
+    if (hash) {
+      const el = document.getElementById(hash)
+      if (el) {
+        const targetY = el.getBoundingClientRect().top + window.scrollY
+        window.scrollTo({ top: Math.max(0, targetY), left: 0, behavior: 'auto' })
+        return
+      }
+    }
+
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' })
+  }, [location.pathname, location.hash])
 
   return (
     <>
