@@ -13,6 +13,7 @@ precision highp float;
 uniform float u_t;
 uniform vec2 u_mouse;
 uniform vec2 u_res;
+uniform vec2 u_tilt;
 
 out vec4 fragColor;
 
@@ -95,12 +96,13 @@ void main() {
   vec2 uv = fragCoord / u_res.xy;
   vec2 p = (fragCoord * 2.0 - u_res.xy) / u_res.y;
   vec2 mouse = (u_mouse * 2.0 - 1.0);
+  vec2 motion = clamp(mouse + u_tilt * 0.85, vec2(-1.0), vec2(1.0));
 
-  float md = length(p - mouse * vec2(u_res.x / u_res.y, 1.0));
+  float md = length(p - motion * vec2(u_res.x / u_res.y, 1.0));
   float mGlow = exp(-md * md * 2.0);
 
   vec2 flow = p;
-  flow += mouse * 0.35;
+  flow += motion * 0.35;
   flow += vec2(sin(u_t * 0.24), cos(u_t * 0.19)) * 0.12;
   flow += vec2(p.y, -p.x) * (mGlow * 0.12);
   flow *= 0.92;
@@ -164,6 +166,7 @@ export default function ParticleCanvas() {
     const uT = gl.getUniformLocation(prog, 'u_t')
     const uMouse = gl.getUniformLocation(prog, 'u_mouse')
     const uRes = gl.getUniformLocation(prog, 'u_res')
+    const uTilt = gl.getUniformLocation(prog, 'u_tilt')
 
     let cw = 0, ch = 0
     const setSize = () => {
@@ -182,6 +185,8 @@ export default function ParticleCanvas() {
 
     const mouse = { x: 0.5, y: 0.5 }
     const targetMouse = { x: 0.5, y: 0.5 }
+    const tilt = { x: 0, y: 0 }
+    const targetTilt = { x: 0, y: 0 }
     const onMove = (e: MouseEvent) => {
       const r = canvas.getBoundingClientRect()
       targetMouse.x = (e.clientX - r.left) / r.width
@@ -193,6 +198,50 @@ export default function ParticleCanvas() {
       targetMouse.y = 0.5
     }
     window.addEventListener('mouseout', onLeave)
+
+    const clamp = (v: number, min: number, max: number) => Math.min(max, Math.max(min, v))
+
+    const onDeviceOrientation = (event: DeviceOrientationEvent) => {
+      const gamma = event.gamma ?? 0
+      const beta = event.beta ?? 0
+      targetTilt.x = clamp(gamma / 45, -1, 1)
+      targetTilt.y = clamp(-beta / 60, -1, 1)
+    }
+
+    let removeOrientation = () => {}
+    const enableOrientation = () => {
+      window.addEventListener('deviceorientation', onDeviceOrientation, true)
+      removeOrientation = () => window.removeEventListener('deviceorientation', onDeviceOrientation, true)
+    }
+
+    const setupOrientation = () => {
+      if (typeof DeviceOrientationEvent === 'undefined') return
+
+      const maybeWithPermission = DeviceOrientationEvent as unknown as {
+        requestPermission?: () => Promise<'granted' | 'denied'>
+      }
+
+      if (typeof maybeWithPermission.requestPermission === 'function') {
+        const unlock = () => {
+          maybeWithPermission.requestPermission?.()
+            .then(result => {
+              if (result === 'granted') enableOrientation()
+            })
+            .catch(() => {})
+            .finally(() => {
+              window.removeEventListener('touchstart', unlock)
+              window.removeEventListener('pointerdown', unlock)
+            })
+        }
+        window.addEventListener('touchstart', unlock, { passive: true, once: true })
+        window.addEventListener('pointerdown', unlock, { passive: true, once: true })
+        return
+      }
+
+      enableOrientation()
+    }
+
+    setupOrientation()
 
     let visible = true
     const io = new IntersectionObserver(
@@ -211,12 +260,15 @@ export default function ParticleCanvas() {
 
       mouse.x += (targetMouse.x - mouse.x) * 0.08
       mouse.y += (targetMouse.y - mouse.y) * 0.08
+      tilt.x += (targetTilt.x - tilt.x) * 0.08
+      tilt.y += (targetTilt.y - tilt.y) * 0.08
 
       const t = (now - start) * 0.001
 
       gl.uniform1f(uT,    t)
       gl.uniform2f(uMouse, mouse.x, mouse.y)
       gl.uniform2f(uRes,   cw, ch)
+      gl.uniform2f(uTilt, tilt.x, tilt.y)
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
     }
     rafRef.current = requestAnimationFrame(draw)
@@ -225,6 +277,7 @@ export default function ParticleCanvas() {
       cancelAnimationFrame(rafRef.current)
       io.disconnect()
       ro.disconnect()
+      removeOrientation()
       window.removeEventListener('mousemove', onMove)
       window.removeEventListener('mouseout', onLeave)
     }
