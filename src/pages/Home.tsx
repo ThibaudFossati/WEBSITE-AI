@@ -13,7 +13,6 @@ export default function Home() {
   const heroTextRef = useRef<HTMLDivElement>(null)
   const autoSnapDoneRef = useRef(false)
   const autoSnapRunningRef = useRef(false)
-  const touchStartYRef = useRef<number | null>(null)
   const [hoveredProject, setHoveredProject] = useState<string | null>(null)
   const [reduceMotion, setReduceMotion] = useState(false)
   const content = useSiteContent()
@@ -37,7 +36,7 @@ export default function Home() {
 
   // ── Parallax hero — texte dérive à 0.38x du scroll ───────────────────────
   useEffect(() => {
-    if (reduceMotion) return
+    if (reduceMotion || isMobile) return
 
     const onScroll = () => {
       if (!heroTextRef.current || !heroRef.current) return
@@ -48,19 +47,21 @@ export default function Home() {
     }
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
-  }, [reduceMotion])
+  }, [reduceMotion, isMobile])
 
   useEffect(() => {
+    const coarsePointer = window.matchMedia('(pointer: coarse)').matches
+
+    // Sur mobile/tactile, on désactive l'auto-snap pour éviter les secousses.
+    if (coarsePointer) return
+
     const scrollToProjects = () => {
       if (autoSnapDoneRef.current || autoSnapRunningRef.current) return
       const projects = document.getElementById('projects')
       if (!projects) return
       const targetY = projects.getBoundingClientRect().top + window.scrollY
 
-      const usingLenis = (
-        !window.matchMedia('(prefers-reduced-motion: reduce)').matches &&
-        !window.matchMedia('(pointer: coarse)').matches
-      )
+      const usingLenis = !window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
       autoSnapRunningRef.current = true
       autoSnapDoneRef.current = true
@@ -82,21 +83,6 @@ export default function Home() {
       scrollToProjects()
     }
 
-    const onTouchStart = (event: TouchEvent) => {
-      touchStartYRef.current = event.touches[0]?.clientY ?? null
-    }
-
-    const onTouchMove = (event: TouchEvent) => {
-      if (autoSnapDoneRef.current) return
-      if (window.scrollY > 8) return
-      const startY = touchStartYRef.current
-      const currentY = event.touches[0]?.clientY
-      if (startY == null || currentY == null) return
-      const delta = startY - currentY
-      if (delta <= 8) return
-      scrollToProjects()
-    }
-
     const onKeyDown = (event: KeyboardEvent) => {
       if (autoSnapDoneRef.current) return
       if (window.scrollY > 8) return
@@ -107,14 +93,10 @@ export default function Home() {
     }
 
     window.addEventListener('wheel', onWheel, { passive: true })
-    window.addEventListener('touchstart', onTouchStart, { passive: true })
-    window.addEventListener('touchmove', onTouchMove, { passive: true })
     window.addEventListener('keydown', onKeyDown)
 
     return () => {
       window.removeEventListener('wheel', onWheel)
-      window.removeEventListener('touchstart', onTouchStart)
-      window.removeEventListener('touchmove', onTouchMove)
       window.removeEventListener('keydown', onKeyDown)
     }
   }, [])

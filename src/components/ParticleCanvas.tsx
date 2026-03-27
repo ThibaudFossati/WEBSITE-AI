@@ -96,7 +96,7 @@ void main() {
   vec2 uv = fragCoord / u_res.xy;
   vec2 p = (fragCoord * 2.0 - u_res.xy) / u_res.y;
   vec2 mouse = (u_mouse * 2.0 - 1.0);
-  vec2 motion = clamp(mouse + u_tilt * 0.85, vec2(-1.0), vec2(1.0));
+  vec2 motion = clamp(mouse + u_tilt * 0.55, vec2(-1.0), vec2(1.0));
   vec2 tilt = clamp(u_tilt, vec2(-1.0), vec2(1.0));
   float tiltStrength = clamp(length(tilt), 0.0, 1.0);
   vec2 tiltDir = tiltStrength > 0.0001 ? normalize(tilt) : vec2(0.0);
@@ -208,11 +208,16 @@ export default function ParticleCanvas() {
 
     const clamp = (v: number, min: number, max: number) => Math.min(max, Math.max(min, v))
 
+    const applyDeadzone = (value: number, deadzone: number) => {
+      if (Math.abs(value) < deadzone) return 0
+      return value
+    }
+
     const onDeviceOrientation = (event: DeviceOrientationEvent) => {
       const gamma = event.gamma ?? 0
       const beta = event.beta ?? 0
-      targetTilt.x = clamp(gamma / 45, -1, 1)
-      targetTilt.y = clamp(-beta / 60, -1, 1)
+      targetTilt.x = applyDeadzone(clamp(gamma / 45, -1, 1), 0.04)
+      targetTilt.y = applyDeadzone(clamp(-beta / 60, -1, 1), 0.04)
     }
 
     let removeOrientation = () => {}
@@ -267,8 +272,8 @@ export default function ParticleCanvas() {
 
       mouse.x += (targetMouse.x - mouse.x) * 0.08
       mouse.y += (targetMouse.y - mouse.y) * 0.08
-      tilt.x += (targetTilt.x - tilt.x) * 0.08
-      tilt.y += (targetTilt.y - tilt.y) * 0.08
+      tilt.x += (targetTilt.x - tilt.x) * (coarsePointer ? 0.045 : 0.08)
+      tilt.y += (targetTilt.y - tilt.y) * (coarsePointer ? 0.045 : 0.08)
 
       const t = (now - start) * 0.001
 
