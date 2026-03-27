@@ -93,6 +93,7 @@ export default function Cursor() {
         let current = el as HTMLElement | null
         const target = el as HTMLElement
         const cursorOverride = target.closest('[data-cursor]')?.getAttribute('data-cursor')
+        const cursorTone = target.closest('[data-cursor-tone]')?.getAttribute('data-cursor-tone')
         const nativeCursor = window.getComputedStyle(target).cursor
         const hideCustom = (
           nativeCursor.includes('pointer') ||
@@ -107,6 +108,13 @@ export default function Cursor() {
         const hidden = cursorOverride === 'hide'
         const quiet = cursorOverride === 'quiet'
         const interactive = !hidden && !quiet && !isDisabled && (baseInteractive || forcedHover)
+
+        if (cursorTone === 'light') {
+          return { luminance: 0.05, interactive, hidden, hideCustom }
+        }
+        if (cursorTone === 'dark') {
+          return { luminance: 0.95, interactive, hidden, hideCustom }
+        }
 
         // Remonte l'arbre DOM pour trouver une couleur de fond
         while (current) {

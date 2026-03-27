@@ -85,6 +85,26 @@ export default function Nav() {
     }
   }
 
+  const handleLogoClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    setMenuOpen(false)
+
+    if (location.pathname === '/') {
+      e.preventDefault()
+      window.scrollTo({ top: 0, left: 0, behavior: 'smooth' })
+      if (location.hash) {
+        window.history.replaceState(null, '', '/')
+      }
+      return
+    }
+
+    e.preventDefault()
+    navigate('/')
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' })
+    requestAnimationFrame(() => {
+      window.scrollTo({ top: 0, left: 0, behavior: 'auto' })
+    })
+  }
+
   return (
     <>
       {/* ── Mobile menu overlay ── */}
@@ -112,6 +132,7 @@ export default function Nav() {
       {/* ── Nav bar ── */}
       <nav
         className="nav-inner"
+        data-cursor-tone={isHomeHeroClear ? 'light' : undefined}
         style={{
           ['--nav-link-color' as string]: onDarkHero ? 'rgba(225,235,255,0.72)' : 'rgba(10,10,10,0.45)',
           ['--nav-link-hover' as string]: onDarkHero ? '#f0f4ff' : '#0a0a0a',
@@ -133,6 +154,7 @@ export default function Nav() {
         {/* Logo */}
         <Link
           to="/"
+          onClick={handleLogoClick}
           data-cursor="hover"
           style={{
             fontFamily: 'Inter, sans-serif',
