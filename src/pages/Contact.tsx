@@ -2,10 +2,12 @@ import { useEffect } from 'react'
 import DisplayText from '../components/DisplayText'
 import TextReveal from '../components/TextReveal'
 import { useSiteContent } from '../hooks/useSiteContent'
+import { useIsMobile } from '../hooks/useIsMobile'
 import { getDisplayFontFamily } from '../lib/typography'
 
 export default function Contact() {
   const content = useSiteContent()
+  const isMobile = useIsMobile()
   const { contact } = content
   const displayFont = getDisplayFontFamily(content.design.displayFont)
   const displayCase = content.design.displayCase
@@ -14,7 +16,7 @@ export default function Contact() {
 
   return (
     <main style={{ paddingTop: '120px', minHeight: '100svh', background: '#fff', ['--display-font' as string]: displayFont }}>
-      <section style={{ padding: '80px 48px' }}>
+      <section style={{ padding: isMobile ? '56px 20px' : '80px 48px' }}>
         <TextReveal as="h1" delay={100}>
           <span style={{
             fontFamily: 'var(--display-font)',
@@ -23,13 +25,13 @@ export default function Contact() {
             letterSpacing: '-0.03em',
             lineHeight: 0.9,
             display: 'block',
-            marginBottom: '80px',
+            marginBottom: isMobile ? '40px' : '80px',
           }}>
             <DisplayText text={contact.title} caseMode={displayCase} emphasisMode={displayEmphasis} />
           </span>
         </TextReveal>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '80px', alignItems: 'start' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: isMobile ? '36px' : '80px', alignItems: 'start' }}>
           {/* Left info */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '48px' }}>
             <div>
@@ -84,7 +86,7 @@ export default function Contact() {
               <div style={{ fontSize: '10px', letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(10,10,10,0.3)', marginBottom: '16px' }}>
                 Réseaux
               </div>
-              <div style={{ display: 'flex', gap: '20px' }}>
+              <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
                 {contact.socials.map(({ label, href }) => (
                   <a key={label} href={href} target="_blank" rel="noreferrer" style={{
                     fontSize: '11px',
@@ -105,7 +107,7 @@ export default function Contact() {
 
           {/* Right — availability */}
           <div style={{
-            padding: '48px',
+            padding: isMobile ? '28px' : '48px',
             background: '#f8f6f2',
             borderRadius: '2px',
           }}>

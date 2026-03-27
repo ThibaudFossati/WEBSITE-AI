@@ -3,11 +3,13 @@ import { useParams, Link } from 'react-router-dom'
 import DisplayText from '../components/DisplayText'
 import TextReveal from '../components/TextReveal'
 import { useSiteContent } from '../hooks/useSiteContent'
+import { useIsMobile } from '../hooks/useIsMobile'
 import { getDisplayFontFamily } from '../lib/typography'
 
 export default function Project() {
   const { id } = useParams<{ id: string }>()
   const content = useSiteContent()
+  const isMobile = useIsMobile()
   const { projects } = content
   const displayFont = getDisplayFontFamily(content.design.displayFont)
   const displayCase = content.design.displayCase
@@ -23,7 +25,7 @@ export default function Project() {
 
   if (!project) {
     return (
-      <main style={{ paddingTop: '120px', textAlign: 'center', padding: '200px 48px' }}>
+      <main style={{ paddingTop: '120px', textAlign: 'center', padding: isMobile ? '150px 20px' : '200px 48px' }}>
         <p>Projet introuvable</p>
         <Link to="/">← Retour</Link>
       </main>
@@ -33,7 +35,7 @@ export default function Project() {
   return (
     <main style={{ paddingTop: '120px', ['--display-font' as string]: displayFont }}>
       {/* Hero */}
-      <section style={{ padding: '80px 48px 60px', background: project.color }}>
+      <section style={{ padding: isMobile ? '56px 20px 36px' : '80px 48px 60px', background: project.color }}>
         <div style={{ marginBottom: '8px' }}>
           <span style={{ fontSize: '11px', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(10,10,10,0.4)' }}>
             {project.client} · {project.year}
@@ -82,7 +84,7 @@ export default function Project() {
       </div>
 
       {/* Content */}
-      <section style={{ padding: '80px 48px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '80px' }}>
+      <section style={{ padding: isMobile ? '56px 20px' : '80px 48px', display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: isMobile ? '36px' : '80px' }}>
         <div>
           <div style={{ fontSize: '10px', letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(10,10,10,0.3)', marginBottom: '20px' }}>
             Projet
@@ -127,7 +129,7 @@ export default function Project() {
             <div style={{ fontSize: '10px', letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(10,10,10,0.3)', marginBottom: '12px' }}>
               Avec
             </div>
-            <div style={{ display: 'flex', gap: '12px' }}>
+            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
               {project.agencies.map(a => (
                 <span key={a} style={{ fontSize: '14px', color: 'rgba(10,10,10,0.6)', fontWeight: 300 }}>{a}</span>
               ))}
@@ -137,7 +139,7 @@ export default function Project() {
       </section>
 
       {project.images.length > 0 && (
-        <section style={{ padding: '0 48px 80px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+        <section style={{ padding: isMobile ? '0 20px 56px' : '0 48px 80px', display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '24px' }}>
           {project.images.map((image, index) => (
             <div key={`${image}-${index}`} style={{ aspectRatio: '4 / 5', background: project.color, overflow: 'hidden' }}>
               <img
@@ -152,7 +154,7 @@ export default function Project() {
 
       {/* Next project */}
       {project.videoUrl && (
-        <section style={{ padding: '0 48px 80px' }}>
+        <section style={{ padding: isMobile ? '0 20px 56px' : '0 48px 80px' }}>
           <div style={{ fontSize: '10px', letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(10,10,10,0.3)', marginBottom: '16px' }}>
             Film
           </div>
@@ -171,11 +173,13 @@ export default function Project() {
       {nextProject && (
         <Link to={`/projects/${nextProject.id}`} style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
           <section style={{
-            padding: '80px 48px',
+            padding: isMobile ? '56px 20px' : '80px 48px',
             background: '#f8f6f2',
             display: 'flex',
             justifyContent: 'space-between',
-            alignItems: 'center',
+            alignItems: isMobile ? 'flex-start' : 'center',
+            flexDirection: isMobile ? 'column' : 'row',
+            gap: isMobile ? '18px' : '0',
           }}>
             <div>
               <div style={{ fontSize: '10px', letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(10,10,10,0.3)', marginBottom: '12px' }}>

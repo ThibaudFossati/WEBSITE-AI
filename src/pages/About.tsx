@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import DisplayText from '../components/DisplayText'
 import { useSiteContent } from '../hooks/useSiteContent'
+import { useIsMobile } from '../hooks/useIsMobile'
 import { getDisplayFontFamily, type DisplayCaseMode, type DisplayEmphasisMode } from '../lib/typography'
 
 type Variant = 'A' | 'B' | 'C'
@@ -108,16 +109,18 @@ function VariantA({
   estLabel,
   caseMode,
   emphasisMode,
+  isMobile,
 }: {
   name: string
   roleLine: string
   estLabel: string
   caseMode: DisplayCaseMode
   emphasisMode: DisplayEmphasisMode
+  isMobile: boolean
 }) {
   return (
     <section style={{
-      height: '100svh',
+      minHeight: '100svh',
       background: '#fff',
       display: 'flex',
       flexDirection: 'column',
@@ -125,16 +128,17 @@ function VariantA({
       justifyContent: 'center',
       overflow: 'hidden',
       position: 'relative',
+      padding: isMobile ? '110px 20px 76px' : '0 48px',
     }}>
       <h1 style={{
         fontFamily: BODONI,
         fontWeight: 400,
-        fontSize: 'clamp(100px, 18vw, 280px)',
+        fontSize: isMobile ? 'clamp(58px, 20vw, 120px)' : 'clamp(100px, 18vw, 280px)',
         lineHeight: 0.88,
         letterSpacing: '-0.04em',
         color: '#0a0a0a',
         textAlign: 'center',
-        whiteSpace: 'nowrap',
+        whiteSpace: isMobile ? 'normal' : 'nowrap',
         userSelect: 'none',
       }}>
         <DisplayText text={name} caseMode={caseMode} emphasisMode={emphasisMode} />
@@ -153,8 +157,8 @@ function VariantA({
       </p>
       <span style={{
         position: 'absolute',
-        bottom: '40px',
-        right: '48px',
+        bottom: isMobile ? '24px' : '40px',
+        right: isMobile ? '20px' : '48px',
         fontFamily: INTER,
         fontSize: '10px',
         letterSpacing: '0.18em',
@@ -348,6 +352,7 @@ function VariantC({
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default function About() {
   const content = useSiteContent()
+  const isMobile = useIsMobile()
   const displayFont = getDisplayFontFamily(content.design.displayFont)
   const displayCase = content.design.displayCase
   const displayEmphasis = content.design.displayEmphasis
@@ -355,43 +360,48 @@ export default function About() {
   useEffect(() => { window.scrollTo(0, 0) }, [])
   useEffect(() => { setVariant(content.about.defaultVariant) }, [content.about.defaultVariant])
 
+  const activeVariant: Variant = isMobile ? 'A' : variant
+
   return (
     <main style={{ paddingTop: '80px', ['--display-font' as string]: displayFont }}>
 
       {/* Switcher */}
-      <div style={{
-        position: 'fixed', top: '82px', right: '48px', zIndex: 500,
-        display: 'flex', gap: '3px',
-        background: 'rgba(255,255,255,0.9)',
-        backdropFilter: 'blur(10px)',
-        border: '1px solid rgba(10,10,10,0.08)',
-        borderRadius: '4px', padding: '3px',
-      }}>
-        {(['A', 'B', 'C'] as Variant[]).map(v => (
-          <button key={v} onClick={() => setVariant(v)} style={{
-            width: '30px', height: '26px',
-            border: 'none', borderRadius: '2px',
-            background: variant === v ? '#0a0a0a' : 'transparent',
-            color: variant === v ? '#fff' : 'rgba(10,10,10,0.35)',
-            fontFamily: INTER, fontSize: '11px',
-            letterSpacing: '0.08em',
-            fontWeight: variant === v ? 500 : 300,
-            cursor: 'pointer',
-            transition: 'all 0.2s ease',
-          }}>{v}</button>
-        ))}
-      </div>
+      {!isMobile && (
+        <div style={{
+          position: 'fixed', top: '82px', right: '48px', zIndex: 500,
+          display: 'flex', gap: '3px',
+          background: 'rgba(255,255,255,0.9)',
+          backdropFilter: 'blur(10px)',
+          border: '1px solid rgba(10,10,10,0.08)',
+          borderRadius: '4px', padding: '3px',
+        }}>
+          {(['A', 'B', 'C'] as Variant[]).map(v => (
+            <button key={v} onClick={() => setVariant(v)} style={{
+              width: '30px', height: '26px',
+              border: 'none', borderRadius: '2px',
+              background: variant === v ? '#0a0a0a' : 'transparent',
+              color: variant === v ? '#fff' : 'rgba(10,10,10,0.35)',
+              fontFamily: INTER, fontSize: '11px',
+              letterSpacing: '0.08em',
+              fontWeight: variant === v ? 500 : 300,
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+            }}>{v}</button>
+          ))}
+        </div>
+      )}
 
-      {variant === 'A' && (
+      {activeVariant === 'A' && (
         <VariantA
           name={content.about.name}
           roleLine={content.about.roleLine}
           estLabel={content.about.estLabel}
           caseMode={displayCase}
           emphasisMode={displayEmphasis}
+          isMobile={isMobile}
         />
       )}
-      {variant === 'B' && (
+      {activeVariant === 'B' && (
         <VariantB
           name={content.about.name}
           darkLabel={content.about.splitDarkLabel}
@@ -401,7 +411,7 @@ export default function About() {
           emphasisMode={displayEmphasis}
         />
       )}
-      {variant === 'C' && (
+      {activeVariant === 'C' && (
         <VariantC
           name={content.about.name}
           quote={content.about.manifestoQuote}
@@ -414,8 +424,10 @@ export default function About() {
 
       {/* CTA */}
       <section style={{
-        padding: '80px 48px', background: '#f8f6f2',
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+        padding: isMobile ? '56px 20px' : '80px 48px', background: '#f8f6f2',
+        display: 'flex', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center',
+        flexDirection: isMobile ? 'column' : 'row',
+        gap: isMobile ? '18px' : '0',
       }}>
         <p style={{ fontFamily: BODONI, fontSize: 'clamp(28px, 4vw, 52px)', fontWeight: 400, color: '#0a0a0a' }}>
           <DisplayText text={content.about.ctaTitle} caseMode={displayCase} emphasisMode={displayEmphasis} />

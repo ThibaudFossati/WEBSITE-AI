@@ -5,6 +5,7 @@ import DisplayText from '../components/DisplayText'
 import TextReveal from '../components/TextReveal'
 import Magnet from '../components/Magnet'
 import { useSiteContent } from '../hooks/useSiteContent'
+import { useIsMobile } from '../hooks/useIsMobile'
 import { getDisplayFontFamily } from '../lib/typography'
 
 export default function Home() {
@@ -13,6 +14,7 @@ export default function Home() {
   const [hoveredProject, setHoveredProject] = useState<string | null>(null)
   const [reduceMotion, setReduceMotion] = useState(false)
   const content = useSiteContent()
+  const isMobile = useIsMobile()
   const { home, footer } = content
   const displayFont = getDisplayFontFamily(content.design.displayFont)
   const displayCase = content.design.displayCase
@@ -57,7 +59,7 @@ export default function Home() {
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'flex-end',
-          padding: '0 48px 64px',
+          padding: isMobile ? '0 20px 36px' : '0 48px 64px',
           overflow: 'hidden',
           background: '#040913',
         }}
@@ -122,7 +124,13 @@ export default function Home() {
           </div>
 
           {/* Bottom row */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '48px' }}>
+          <div style={{
+            display: 'flex',
+            alignItems: isMobile ? 'flex-start' : 'center',
+            justifyContent: 'space-between',
+            flexDirection: isMobile ? 'column' : 'row',
+            gap: isMobile ? '14px' : '48px',
+          }}>
             <TextReveal delay={550} as="p">
               <span style={{
                 fontSize: '11px',
@@ -130,7 +138,7 @@ export default function Home() {
                 textTransform: 'uppercase',
                 color: 'rgba(200,220,255,0.55)',
                 fontWeight: 300,
-                whiteSpace: 'nowrap',
+                whiteSpace: isMobile ? 'normal' : 'nowrap',
               }}>
                 {home.heroTagline}
               </span>
@@ -143,7 +151,7 @@ export default function Home() {
                 textTransform: 'uppercase',
                 color: 'rgba(200,220,255,0.30)',
                 fontWeight: 300,
-                whiteSpace: 'nowrap',
+                whiteSpace: isMobile ? 'normal' : 'nowrap',
               }}>
                 {home.heroLocation}
               </span>
@@ -181,7 +189,7 @@ export default function Home() {
       {/* ── PROJECTS ── */}
       <section
         id="projects"
-        style={{ padding: '120px 48px', background: '#ffffff' }}
+        style={{ padding: isMobile ? '72px 20px' : '120px 48px', background: '#ffffff' }}
       >
         {/* Section header */}
         <div
@@ -189,7 +197,7 @@ export default function Home() {
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'baseline',
-            marginBottom: '80px',
+            marginBottom: isMobile ? '36px' : '80px',
           }}
         >
           <TextReveal as="h2">
@@ -233,14 +241,14 @@ export default function Home() {
                 className="project-card project-row"
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: '64px 1fr 1fr auto',
+                  gridTemplateColumns: isMobile ? '1fr' : '64px 1fr 1fr auto',
                   alignItems: 'center',
-                  gap: '40px',
-                  padding: '32px 0',
+                  gap: isMobile ? '14px' : '40px',
+                  padding: isMobile ? '22px 0' : '32px 0',
                   borderTop: '1px solid rgba(10,10,10,0.08)',
                   transition: 'background 0.3s ease',
                   background: hoveredProject === project.id ? '#f8f6f2' : 'transparent',
-                  paddingLeft: hoveredProject === project.id ? '24px' : '0',
+                  paddingLeft: hoveredProject === project.id && !isMobile ? '24px' : '0',
                 }}
               >
                 {/* Index */}
@@ -302,7 +310,7 @@ export default function Home() {
                 </div>
 
                 {/* Year + arrow */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '24px', paddingRight: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '24px', paddingRight: isMobile ? '0' : '12px' }}>
                   <span style={{ fontSize: '11px', color: 'rgba(10,10,10,0.3)', letterSpacing: '0.08em' }}>
                     {project.year}
                   </span>
@@ -331,6 +339,10 @@ export default function Home() {
         id="services"
         style={{
           padding: '120px 48px',
+          paddingLeft: isMobile ? '20px' : '48px',
+          paddingRight: isMobile ? '20px' : '48px',
+          paddingTop: isMobile ? '72px' : '120px',
+          paddingBottom: isMobile ? '72px' : '120px',
           background: '#0a0a0a',
           color: '#ffffff',
         }}
@@ -338,8 +350,8 @@ export default function Home() {
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
-            gap: '80px',
+            gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
+            gap: isMobile ? '44px' : '80px',
             alignItems: 'start',
           }}
         >
@@ -413,12 +425,16 @@ export default function Home() {
       <section
         style={{
           padding: '160px 48px',
+          paddingLeft: isMobile ? '20px' : '48px',
+          paddingRight: isMobile ? '20px' : '48px',
+          paddingTop: isMobile ? '86px' : '160px',
+          paddingBottom: isMobile ? '86px' : '160px',
           background: '#ffffff',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
           textAlign: 'center',
-          gap: '40px',
+          gap: isMobile ? '24px' : '40px',
         }}
       >
         <TextReveal as="p">
@@ -479,10 +495,16 @@ export default function Home() {
       <section
         style={{
           padding: '120px 48px',
+          paddingLeft: isMobile ? '20px' : '48px',
+          paddingRight: isMobile ? '20px' : '48px',
+          paddingTop: isMobile ? '76px' : '120px',
+          paddingBottom: isMobile ? '76px' : '120px',
           background: '#f8f6f2',
           display: 'flex',
           justifyContent: 'space-between',
-          alignItems: 'center',
+          alignItems: isMobile ? 'flex-start' : 'center',
+          flexDirection: isMobile ? 'column' : 'row',
+          gap: isMobile ? '28px' : '0',
         }}
       >
         <TextReveal as="h2">
@@ -508,8 +530,8 @@ export default function Home() {
                 display: 'inline-flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                width: '160px',
-                height: '160px',
+                width: isMobile ? '126px' : '160px',
+                height: isMobile ? '126px' : '160px',
                 borderRadius: '50%',
                 border: '1px solid rgba(10,10,10,0.2)',
                 fontSize: '11px',
@@ -539,11 +561,15 @@ export default function Home() {
       <footer
         style={{
           padding: '32px 48px',
+          paddingLeft: isMobile ? '20px' : '48px',
+          paddingRight: isMobile ? '20px' : '48px',
           background: '#0a0a0a',
           color: 'rgba(255,255,255,0.2)',
           display: 'flex',
           justifyContent: 'space-between',
-          alignItems: 'center',
+          alignItems: isMobile ? 'flex-start' : 'center',
+          flexDirection: isMobile ? 'column' : 'row',
+          gap: isMobile ? '12px' : '0',
           fontSize: '10px',
           letterSpacing: '0.1em',
           textTransform: 'uppercase',
