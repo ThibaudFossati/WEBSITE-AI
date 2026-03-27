@@ -16,8 +16,9 @@ export default function App() {
   // ── Lenis smooth scroll — inertie forte ──────────────────────────────────
   useEffect(() => {
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const coarsePointer = window.matchMedia('(pointer: coarse)').matches
 
-    if (reduceMotion) {
+    if (reduceMotion || coarsePointer) {
       const onScroll = () => {
         const doc = document.documentElement
         const max = Math.max(1, doc.scrollHeight - window.innerHeight)

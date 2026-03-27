@@ -133,6 +133,7 @@ export default function ParticleCanvas() {
   const rafRef = useRef<number>(0)
 
   useEffect(() => {
+    const coarsePointer = window.matchMedia('(pointer: coarse)').matches
     const canvas = canvasRef.current
     if (!canvas) return
     const gl = canvas.getContext('webgl2', { alpha: true, antialias: false })
@@ -169,7 +170,7 @@ export default function ParticleCanvas() {
       const el  = canvas.closest('section') || canvas.parentElement
       const sw  = el ? el.clientWidth  : window.innerWidth
       const sh  = el ? el.clientHeight : window.innerHeight
-      const dpr = Math.min(window.devicePixelRatio || 1, 1.5)
+      const dpr = Math.min(window.devicePixelRatio || 1, coarsePointer ? 1 : 1.5)
       cw = Math.round(sw * dpr); ch = Math.round(sh * dpr)
       canvas.width = cw; canvas.height = ch
       canvas.style.width = sw + 'px'; canvas.style.height = sh + 'px'
@@ -200,9 +201,13 @@ export default function ParticleCanvas() {
     io.observe(canvas)
 
     const start = performance.now()
+    let lastDraw = 0
+    const minFrameMs = coarsePointer ? 33 : 16
     const draw = (now: number) => {
       rafRef.current = requestAnimationFrame(draw)
       if (!visible) return
+      if (now - lastDraw < minFrameMs) return
+      lastDraw = now
 
       mouse.x += (targetMouse.x - mouse.x) * 0.08
       mouse.y += (targetMouse.y - mouse.y) * 0.08

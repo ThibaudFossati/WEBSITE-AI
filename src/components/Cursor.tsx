@@ -12,6 +12,10 @@ export default function Cursor() {
   const waveBRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
+    const coarsePointer = window.matchMedia('(pointer: coarse)').matches
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    if (coarsePointer || reduceMotion) return
+
     const main = mainRef.current
     const follower = followerRef.current
     const waveA = waveARef.current
