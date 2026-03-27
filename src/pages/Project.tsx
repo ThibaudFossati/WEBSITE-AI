@@ -6,8 +6,12 @@ import { useSiteContent } from '../hooks/useSiteContent'
 export default function Project() {
   const { id } = useParams<{ id: string }>()
   const { projects } = useSiteContent()
-  const project = projects.find(p => p.id === id)
-  const nextProject = projects[(projects.findIndex(p => p.id === id) + 1) % projects.length]
+  const publishedProjects = projects
+    .filter(project => project.status === 'published')
+    .sort((a, b) => a.order - b.order)
+  const project = publishedProjects.find(p => p.id === id)
+  const projectIndex = publishedProjects.findIndex(p => p.id === id)
+  const nextProject = projectIndex >= 0 ? publishedProjects[(projectIndex + 1) % publishedProjects.length] : null
 
   useEffect(() => { window.scrollTo(0, 0) }, [id])
 
@@ -142,31 +146,50 @@ export default function Project() {
       )}
 
       {/* Next project */}
-      <Link to={`/projects/${nextProject.id}`} style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
-        <section style={{
-          padding: '80px 48px',
-          background: '#f8f6f2',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-        }}>
-          <div>
-            <div style={{ fontSize: '10px', letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(10,10,10,0.3)', marginBottom: '12px' }}>
-              Projet suivant
-            </div>
-            <span style={{
-              fontFamily: 'Bodoni Moda, serif',
-              fontSize: 'clamp(28px, 4vw, 56px)',
-              fontWeight: 300,
-              letterSpacing: '-0.02em',
-              fontStyle: 'italic',
-            }}>
-              {nextProject.client} — {nextProject.title}
-            </span>
+      {project.videoUrl && (
+        <section style={{ padding: '0 48px 80px' }}>
+          <div style={{ fontSize: '10px', letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(10,10,10,0.3)', marginBottom: '16px' }}>
+            Film
           </div>
-          <span style={{ fontSize: '32px', color: 'rgba(10,10,10,0.3)' }}>→</span>
+          <div style={{ aspectRatio: '16 / 9', background: '#0a0a0a', overflow: 'hidden' }}>
+            <iframe
+              src={project.videoUrl}
+              title={`${project.title} video`}
+              style={{ width: '100%', height: '100%', border: 0 }}
+              allow="autoplay; fullscreen; picture-in-picture"
+              allowFullScreen
+            />
+          </div>
         </section>
-      </Link>
+      )}
+
+      {nextProject && (
+        <Link to={`/projects/${nextProject.id}`} style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
+          <section style={{
+            padding: '80px 48px',
+            background: '#f8f6f2',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          }}>
+            <div>
+              <div style={{ fontSize: '10px', letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(10,10,10,0.3)', marginBottom: '12px' }}>
+                Projet suivant
+              </div>
+              <span style={{
+                fontFamily: 'Bodoni Moda, serif',
+                fontSize: 'clamp(28px, 4vw, 56px)',
+                fontWeight: 300,
+                letterSpacing: '-0.02em',
+                fontStyle: 'italic',
+              }}>
+                {nextProject.client} — {nextProject.title}
+              </span>
+            </div>
+            <span style={{ fontSize: '32px', color: 'rgba(10,10,10,0.3)' }}>→</span>
+          </section>
+        </Link>
+      )}
     </main>
   )
 }

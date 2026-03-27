@@ -18,6 +18,8 @@ const createEmptyProject = (): Project => ({
   client: 'Nouveau client',
   title: 'Nouveau projet',
   tagline: '',
+  status: 'draft',
+  order: Date.now(),
   category: ['Art direction'],
   year: new Date().getFullYear().toString(),
   agencies: ['Agence'],
@@ -27,8 +29,13 @@ const createEmptyProject = (): Project => ({
   tools: [''],
   cover: '',
   images: [],
+  videoUrl: '',
   color: '#f3efe7',
 })
+
+function sortProjects(projects: Project[]) {
+  return [...projects].sort((a, b) => a.order - b.order)
+}
 
 function StudioInput(props: React.InputHTMLAttributes<HTMLInputElement> & { label: string }) {
   const { label, ...rest } = props
@@ -112,7 +119,10 @@ function SocialLinksEditor({
 
 export default function Studio() {
   const [section, setSection] = useState<StudioSection>('home')
-  const [content, setContent] = useState<SiteContent>(() => loadSiteContent())
+  const [content, setContent] = useState<SiteContent>(() => {
+    const loaded = loadSiteContent()
+    return { ...loaded, projects: sortProjects(loaded.projects) }
+  })
   const [selectedProjectId, setSelectedProjectId] = useState(content.projects[0]?.id ?? '')
   const [saveLabel, setSaveLabel] = useState('Sauvegarde locale active')
 
@@ -139,24 +149,40 @@ export default function Studio() {
     [content.projects, selectedProjectId]
   )
 
+  const publishedCount = content.projects.filter(project => project.status === 'published').length
+
   const setProject = (updater: (project: Project) => Project) => {
     if (!selectedProject) return
     setContent(current => ({
       ...current,
-      projects: current.projects.map(project => (
+      projects: sortProjects(current.projects.map(project => (
         project.id === selectedProject.id ? updater(project) : project
-      )),
+      ))),
     }))
+  }
+
+  const moveProject = (projectId: string, direction: -1 | 1) => {
+    setContent(current => {
+      const sorted = sortProjects(current.projects)
+      const index = sorted.findIndex(project => project.id === projectId)
+      const targetIndex = index + direction
+      if (index < 0 || targetIndex < 0 || targetIndex >= sorted.length) return current
+
+      const swapped = [...sorted]
+      ;[swapped[index], swapped[targetIndex]] = [swapped[targetIndex], swapped[index]]
+      const reordered = swapped.map((project, orderedIndex) => ({ ...project, order: orderedIndex }))
+      return { ...current, projects: reordered }
+    })
   }
 
   return (
     <main className="studio-shell">
       <aside className="studio-sidebar">
         <div>
-          <p className="studio-kicker">Studio local</p>
-          <h1>InStories Content Studio</h1>
+          <p className="studio-kicker">Admin contenu</p>
+          <h1>InStories Content Admin</h1>
           <p className="studio-muted">
-            Édite les pages en direct, sauvegardées dans ce navigateur uniquement.
+            Alimente le site, organise les contenus, et sauvegarde localement dans ce navigateur.
           </p>
         </div>
 
@@ -176,6 +202,7 @@ export default function Studio() {
 
         <div className="studio-sidebar-footer">
           <p>{saveLabel}</p>
+          <p>{publishedCount} projet(s) publié(s)</p>
           <a href="/" className="studio-link">
             Ouvrir le site
           </a>
@@ -247,7 +274,7 @@ export default function Studio() {
                   onChange={e => setContent({ ...content, home: { ...content.home, aboutCtaLabel: e.target.value } })}
                 />
                 <StudioInput
-                  label="Bouton contact"
+                  label="Texte bouton contact"
                   value={content.home.contactCtaButton}
                   onChange={e => setContent({ ...content, home: { ...content.home, contactCtaButton: e.target.value } })}
                 />
@@ -520,16 +547,31 @@ export default function Studio() {
           <div className="studio-projects-layout">
             <StudioCard title="Liste des projets">
               <div className="studio-project-list">
-                {content.projects.map(project => (
-                  <button
-                    key={project.id}
-                    type="button"
-                    className={`studio-project-item${selectedProject?.id === project.id ? ' active' : ''}`}
-                    onClick={() => setSelectedProjectId(project.id)}
-                  >
-                    <strong>{project.client}</strong>
-                    <span>{project.title}</span>
-                  </button>
+                {sortProjects(content.projects).map((project, index) => (
+                  <div key={project.id} className={`studio-project-item${selectedProject?.id === project.id ? ' active' : ''}`}>
+                    <button
+                      type="button"
+                      className="studio-project-select"
+                      onClick={() => setSelectedProjectId(project.id)}
+                    >
+                      <strong>{project.client}</strong>
+                      <span>{project.title}</span>
+                      <em>{project.status === 'published' ? 'Publié' : 'Brouillon'}</em>
+                    </button>
+                    <div className="studio-project-controls">
+                      <button type="button" className="studio-order-btn" onClick={() => moveProject(project.id, -1)} disabled={index === 0}>
+                        ↑
+                      </button>
+                      <button
+                        type="button"
+                        className="studio-order-btn"
+                        onClick={() => moveProject(project.id, 1)}
+                        disabled={index === content.projects.length - 1}
+                      >
+                        ↓
+                      </button>
+                    </div>
+                  </div>
                 ))}
               </div>
               <button
@@ -537,7 +579,10 @@ export default function Studio() {
                 className="studio-secondary"
                 onClick={() => {
                   const nextProject = createEmptyProject()
-                  setContent({ ...content, projects: [...content.projects, nextProject] })
+                  setContent({
+                    ...content,
+                    projects: sortProjects([...content.projects, { ...nextProject, order: content.projects.length }]),
+                  })
                   setSelectedProjectId(nextProject.id)
                 }}
               >
@@ -547,6 +592,25 @@ export default function Studio() {
 
             {selectedProject && (
               <StudioCard title="Édition du projet">
+                <div className="studio-project-status-row">
+                  <label className="studio-toggle">
+                    <span>Statut</span>
+                    <select
+                      value={selectedProject.status}
+                      onChange={e => setProject(project => ({
+                        ...project,
+                        status: e.target.value as 'draft' | 'published',
+                      }))}
+                    >
+                      <option value="draft">Brouillon</option>
+                      <option value="published">Publié</option>
+                    </select>
+                  </label>
+                  <div className="studio-project-preview-meta">
+                    <span>Ordre #{selectedProject.order + 1}</span>
+                    <span>URL: /projects/{selectedProject.id}</span>
+                  </div>
+                </div>
                 <div className="studio-grid">
                   <StudioInput
                     label="Client"
@@ -563,7 +627,11 @@ export default function Studio() {
                   <StudioInput
                     label="Slug"
                     value={selectedProject.id}
-                    onChange={e => setProject(project => ({ ...project, id: e.target.value }))}
+                    onChange={e => {
+                      const nextId = e.target.value
+                      setSelectedProjectId(nextId)
+                      setProject(project => ({ ...project, id: nextId }))
+                    }}
                   />
                   <StudioInput
                     label="Année"
@@ -620,6 +688,11 @@ export default function Studio() {
                   value={selectedProject.cover}
                   onChange={e => setProject(project => ({ ...project, cover: e.target.value }))}
                 />
+                <StudioInput
+                  label="Video embed URL"
+                  value={selectedProject.videoUrl}
+                  onChange={e => setProject(project => ({ ...project, videoUrl: e.target.value }))}
+                />
                 <StudioTextarea
                   label="Gallery URLs (une URL par ligne)"
                   rows={4}
@@ -641,13 +714,27 @@ export default function Studio() {
                   value={selectedProject.brief}
                   onChange={e => setProject(project => ({ ...project, brief: e.target.value }))}
                 />
+                <div className="studio-preview-card" style={{ background: selectedProject.color }}>
+                  <div className="studio-preview-copy">
+                    <p>{selectedProject.client}</p>
+                    <h3>{selectedProject.title}</h3>
+                    <span>{selectedProject.tagline || 'Ajoute une baseline projet'}</span>
+                  </div>
+                  {selectedProject.cover ? (
+                    <img src={selectedProject.cover} alt={selectedProject.title} className="studio-preview-image" />
+                  ) : (
+                    <div className="studio-preview-placeholder">Aperçu cover</div>
+                  )}
+                </div>
                 <button
                   type="button"
                   className="studio-danger"
                   onClick={() => {
                     setContent(current => ({
                       ...current,
-                      projects: current.projects.filter(project => project.id !== selectedProject.id),
+                      projects: sortProjects(current.projects
+                        .filter(project => project.id !== selectedProject.id)
+                        .map((project, index) => ({ ...project, order: index }))),
                     }))
                   }}
                 >
@@ -681,12 +768,12 @@ export default function Studio() {
 
             <StudioCard title="Actions">
               <div className="studio-actions">
-                <button
-                  type="button"
-                  className="studio-secondary"
-                  onClick={() => {
-                    const latest = loadSiteContent()
-                    setContent(latest)
+              <button
+                type="button"
+                className="studio-secondary"
+                onClick={() => {
+                  const latest = loadSiteContent()
+                  setContent(latest)
                     setSaveLabel('Contenu relu depuis le stockage local')
                   }}
                 >
@@ -703,7 +790,7 @@ export default function Studio() {
                     setSaveLabel('Contenu réinitialisé aux valeurs par défaut')
                   }}
                 >
-                  Restaurer les valeurs par défaut
+                  Restaurer le contenu par défaut
                 </button>
                 <button
                   type="button"
@@ -713,10 +800,10 @@ export default function Studio() {
                     const defaults = cloneDefaultSiteContent()
                     setContent(defaults)
                     setSelectedProjectId(defaults.projects[0]?.id ?? '')
-                    setSaveLabel('Stockage local vidé')
+                    setSaveLabel('Contenu local effacé')
                   }}
                 >
-                  Vider le stockage local
+                  Effacer le contenu local
                 </button>
               </div>
             </StudioCard>

@@ -19,10 +19,29 @@ export default function Cursor() {
     let fx = -50, fy = -50
     let isDark = true  // true = blanc, false = noir
     let checkCounter = 0
+    let currentState: 'default' | 'hover' | 'click' = 'default'
+
+    const interactiveSelector = [
+      'a',
+      'button',
+      'input',
+      'textarea',
+      'select',
+      '[role="button"]',
+      '[data-cursor="hover"]',
+      '.project-card',
+    ].join(', ')
 
     const onMove = (e: MouseEvent) => {
       mx = e.clientX
       my = e.clientY
+    }
+
+    const setState = (nextState: 'default' | 'hover' | 'click') => {
+      if (currentState === nextState) return
+      currentState = nextState
+      main.dataset.state = nextState
+      follower.dataset.state = nextState
     }
 
     // Parse couleur RGB string
@@ -41,7 +60,7 @@ export default function Cursor() {
     }
 
     // Détecte couleur sous le curseur via DOM
-    const detectBackgroundColor = (x: number, y: number): number => {
+    const inspectPoint = (x: number, y: number): { luminance: number; interactive: boolean } => {
       try {
         // Cacher temporairement le curseur pour ne pas l'inclure
         main.style.display = 'none'
@@ -52,9 +71,10 @@ export default function Cursor() {
         main.style.display = 'block'
         follower.style.display = 'block'
 
-        if (!el) return isDark ? 0.2 : 0.8
+        if (!el) return { luminance: isDark ? 0.2 : 0.8, interactive: false }
 
         let current = el as HTMLElement | null
+        const interactive = Boolean((el as HTMLElement).closest(interactiveSelector))
 
         // Remonte l'arbre DOM pour trouver une couleur de fond
         while (current) {
@@ -63,16 +83,16 @@ export default function Cursor() {
           if (bgColor && bgColor !== 'rgba(0, 0, 0, 0)' && bgColor !== 'transparent') {
             const rgb = parseRGB(bgColor)
             if (rgb) {
-              return getLuminance(rgb)
+              return { luminance: getLuminance(rgb), interactive }
             }
           }
 
           current = current.parentElement
         }
 
-        return isDark ? 0.2 : 0.8
+        return { luminance: isDark ? 0.2 : 0.8, interactive }
       } catch {
-        return isDark ? 0.2 : 0.8
+        return { luminance: isDark ? 0.2 : 0.8, interactive: false }
       }
     }
 
@@ -100,32 +120,50 @@ export default function Cursor() {
 
     const frame = () => {
       // Main circle — exact position
-      main.style.left = `${mx - 4}px`
-      main.style.top = `${my - 4}px`
+      main.style.left = `${mx}px`
+      main.style.top = `${my}px`
 
       // Follower — lerp avec inertie douce
       fx += (mx - fx) * 0.12
       fy += (my - fy) * 0.12
 
-      follower.style.left = `${fx - 15}px`
-      follower.style.top = `${fy - 15}px`
+      follower.style.left = `${fx}px`
+      follower.style.top = `${fy}px`
 
       // Détecte couleur tous les 3 frames (perf)
       checkCounter++
       if (checkCounter > 2) {
         checkCounter = 0
-        const lum = detectBackgroundColor(mx, my)
-        updateCursorColor(lum)
+        const { luminance, interactive } = inspectPoint(mx, my)
+        updateCursorColor(luminance)
+        if (currentState !== 'click') {
+          setState(interactive ? 'hover' : 'default')
+        }
       }
 
       requestAnimationFrame(frame)
     }
 
+    const onDown = () => setState('click')
+    const onUp = () => setState('default')
+    const onWindowOut = (e: MouseEvent) => {
+      if (e.relatedTarget) return
+      mx = -50
+      my = -50
+      setState('default')
+    }
+
     window.addEventListener('mousemove', onMove)
+    window.addEventListener('mousedown', onDown)
+    window.addEventListener('mouseup', onUp)
+    window.addEventListener('mouseout', onWindowOut)
     const raf = requestAnimationFrame(frame)
 
     return () => {
       window.removeEventListener('mousemove', onMove)
+      window.removeEventListener('mousedown', onDown)
+      window.removeEventListener('mouseup', onUp)
+      window.removeEventListener('mouseout', onWindowOut)
       cancelAnimationFrame(raf)
     }
   }, [])
@@ -135,10 +173,12 @@ export default function Cursor() {
       {/* Main circle — adaptatif (blanc ou noir) */}
       <div
         ref={mainRef}
+        id="cursor"
+        data-state="default"
         style={{
           position: 'fixed',
-          width: '8px',
-          height: '8px',
+          width: '14px',
+          height: '14px',
           borderRadius: '50%',
           background: 'rgba(255, 255, 255, 0.95)',
           pointerEvents: 'none',
@@ -151,10 +191,12 @@ export default function Cursor() {
       {/* Follower — grand cercle qui suit (border adaptatif) */}
       <div
         ref={followerRef}
+        id="cursor-follower"
+        data-state="default"
         style={{
           position: 'fixed',
-          width: '30px',
-          height: '30px',
+          width: '52px',
+          height: '52px',
           borderRadius: '50%',
           border: '1.5px solid rgba(255, 255, 255, 0.7)',
           pointerEvents: 'none',

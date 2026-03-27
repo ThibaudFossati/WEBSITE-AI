@@ -3,6 +3,8 @@ export interface Project {
   client: string
   title: string
   tagline: string
+  status: 'draft' | 'published'
+  order: number
   category: string[]
   year: string
   agencies: string[]
@@ -12,6 +14,7 @@ export interface Project {
   tools: string[]
   cover: string
   images: string[]
+  videoUrl: string
   color: string
 }
 
@@ -21,6 +24,8 @@ export const projects: Project[] = [
     client: 'Salomon',
     title: 'Tomorrow Is Yours',
     tagline: 'Art direction trail running',
+    status: 'published',
+    order: 0,
     category: ['Art direction', 'Motion'],
     year: '2024',
     agencies: ['TBWA'],
@@ -30,6 +35,7 @@ export const projects: Project[] = [
     tools: ['Art direction', 'AI Creativity', 'Motion'],
     cover: '/images/salomon-cover.jpg',
     images: [],
+    videoUrl: '',
     color: '#e8e0d5',
   },
   {
@@ -37,6 +43,8 @@ export const projects: Project[] = [
     client: 'Armani Beauty',
     title: 'Crema Nera',
     tagline: 'The remodeling sheer cream',
+    status: 'published',
+    order: 1,
     category: ['Art direction', 'AI Creativity'],
     year: '2024',
     agencies: ['Publicis'],
@@ -46,6 +54,7 @@ export const projects: Project[] = [
     tools: ['Art direction', 'AI Creativity', 'Editing'],
     cover: '/images/armani-cover.jpg',
     images: [],
+    videoUrl: '',
     color: '#f0ede8',
   },
   {
@@ -53,6 +62,8 @@ export const projects: Project[] = [
     client: 'Nespresso × Fusalp',
     title: 'Taste The Winter Wonder',
     tagline: 'Collaboration luxe montagne',
+    status: 'published',
+    order: 2,
     category: ['Art direction', 'Social media'],
     year: '2023',
     agencies: ['BBDO'],
@@ -62,6 +73,7 @@ export const projects: Project[] = [
     tools: ['Art direction', 'Social media', 'Motion'],
     cover: '/images/nespresso-cover.jpg',
     images: [],
+    videoUrl: '',
     color: '#e5e8ed',
   },
   {
@@ -69,6 +81,8 @@ export const projects: Project[] = [
     client: 'Estée Lauder',
     title: 'Advanced Night Repair',
     tagline: 'For beautiful skin, timing is everything',
+    status: 'published',
+    order: 3,
     category: ['Art direction', 'Web design'],
     year: '2023',
     agencies: ['Ogilvy'],
@@ -78,6 +92,7 @@ export const projects: Project[] = [
     tools: ['Art direction', 'Web design', 'Editing'],
     cover: '/images/estee-cover.jpg',
     images: [],
+    videoUrl: '',
     color: '#eceaf5',
   },
   {
@@ -85,6 +100,8 @@ export const projects: Project[] = [
     client: 'Garnier',
     title: 'Ultra Doux',
     tagline: 'Naturalité & performance',
+    status: 'published',
+    order: 4,
     category: ['Art direction', 'Social media'],
     year: '2023',
     agencies: ['DDB'],
@@ -94,6 +111,7 @@ export const projects: Project[] = [
     tools: ['Art direction', 'AI Creativity', 'Social media'],
     cover: '/images/granier-cover.jpg',
     images: [],
+    videoUrl: '',
     color: '#e8f0e5',
   },
 ]

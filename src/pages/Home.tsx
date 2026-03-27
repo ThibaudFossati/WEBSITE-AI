@@ -11,7 +11,11 @@ export default function Home() {
   const heroTextRef = useRef<HTMLDivElement>(null)
   const [hoveredProject, setHoveredProject] = useState<string | null>(null)
   const content = useSiteContent()
-  const { home, projects, footer } = content
+  const { home, footer } = content
+  const projects = content.projects
+    .filter(project => project.status === 'published')
+    .sort((a, b) => a.order - b.order)
+  const ctaLines = home.contactCtaTitle.split('\n')
 
   useEffect(() => {
     window.scrollTo(0, 0)
@@ -474,10 +478,10 @@ export default function Home() {
               fontStyle: 'italic',
             }}
           >
-            {home.contactCtaTitle.split('\n').map((line, index) => (
+            {ctaLines.map((line, index) => (
               <span key={`${line}-${index}`}>
                 {line}
-                {index < home.contactCtaTitle.split('\n').length - 1 ? <br /> : null}
+                {index < ctaLines.length - 1 ? <br /> : null}
               </span>
             ))}
           </span>

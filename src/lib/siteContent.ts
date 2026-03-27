@@ -1,9 +1,19 @@
 import { defaultSiteContent, type SiteContent } from '../data/defaultSiteContent'
+import type { Project } from '../data/projects'
 
 const STORAGE_KEY = 'instories.site-content.v1'
 
 export function cloneDefaultSiteContent(): SiteContent {
   return JSON.parse(JSON.stringify(defaultSiteContent)) as SiteContent
+}
+
+function normalizeProject(project: Project, index: number): Project {
+  return {
+    ...project,
+    status: project.status ?? 'draft',
+    order: typeof project.order === 'number' ? project.order : index,
+    videoUrl: project.videoUrl ?? '',
+  }
 }
 
 export function loadSiteContent(): SiteContent {
@@ -21,7 +31,9 @@ export function loadSiteContent(): SiteContent {
       about: { ...cloneDefaultSiteContent().about, ...parsed.about },
       contact: { ...cloneDefaultSiteContent().contact, ...parsed.contact },
       footer: { ...cloneDefaultSiteContent().footer, ...parsed.footer },
-      projects: Array.isArray(parsed.projects) ? parsed.projects : cloneDefaultSiteContent().projects,
+      projects: Array.isArray(parsed.projects)
+        ? parsed.projects.map((project, index) => normalizeProject(project, index))
+        : cloneDefaultSiteContent().projects.map((project, index) => normalizeProject(project, index)),
     }
   } catch {
     return cloneDefaultSiteContent()
