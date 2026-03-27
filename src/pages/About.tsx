@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { useSiteContent } from '../hooks/useSiteContent'
 
 type Variant = 'A' | 'B' | 'C'
 
@@ -7,7 +8,16 @@ const BODONI = 'Bodoni Moda, Georgia, serif'
 const INTER  = 'Inter, Helvetica Neue, sans-serif'
 
 // ─── A — Monumental ──────────────────────────────────────────────────────────
-function VariantA() {
+function VariantA({
+  name,
+  roleLine,
+  estLabel,
+}: {
+  name: string
+  roleLine: string
+  estLabel: string
+}) {
+  const nameLines = name.split('\n')
   return (
     <section style={{
       height: '100svh',
@@ -31,7 +41,12 @@ function VariantA() {
         whiteSpace: 'nowrap',
         userSelect: 'none',
       }}>
-        Thibaud<br />Fossati
+        {nameLines.map((line, index) => (
+          <span key={`${line}-${index}`}>
+            {line}
+            {index < nameLines.length - 1 ? <br /> : null}
+          </span>
+        ))}
       </h1>
       <p style={{
         fontFamily: INTER,
@@ -43,7 +58,7 @@ function VariantA() {
         marginTop: '52px',
         textAlign: 'center',
       }}>
-        Art Director · AI Creativity · Paris
+        {roleLine}
       </p>
       <span style={{
         position: 'absolute',
@@ -55,14 +70,25 @@ function VariantA() {
         color: 'rgba(10,10,10,0.18)',
         textTransform: 'uppercase',
       }}>
-        Est. 2009
+        {estLabel}
       </span>
     </section>
   )
 }
 
 // ─── B — Split Screen ─────────────────────────────────────────────────────────
-function VariantB() {
+function VariantB({
+  name,
+  darkLabel,
+  intro,
+  skills,
+}: {
+  name: string
+  darkLabel: string
+  intro: string
+  skills: string[]
+}) {
+  const nameLines = name.split('\n')
   return (
     <section style={{
       height: '100svh',
@@ -98,7 +124,7 @@ function VariantB() {
           letterSpacing: '0.22em', textTransform: 'uppercase',
           color: 'rgba(255,255,255,0.22)', position: 'relative', zIndex: 1,
         }}>
-          15+ années · Premium brands
+          {darkLabel}
         </p>
       </div>
 
@@ -120,7 +146,12 @@ function VariantB() {
           letterSpacing: '-0.03em',
           color: '#0a0a0a',
         }}>
-          Thibaud<br />Fossati
+          {nameLines.map((line, index) => (
+            <span key={`${line}-${index}`}>
+              {line}
+              {index < nameLines.length - 1 ? <br /> : null}
+            </span>
+          ))}
         </h1>
         <div style={{ width: '40px', height: '1px', background: 'rgba(10,10,10,0.15)' }}/>
         <p style={{
@@ -128,10 +159,10 @@ function VariantB() {
           fontSize: '15px', lineHeight: 1.85,
           color: 'rgba(10,10,10,0.55)', maxWidth: '340px',
         }}>
-          Directeur artistique indépendant, Thibaud collabore depuis 15 ans avec Publicis, TBWA, BBDO, Ogilvy — pour des marques qui exigent l'excellence.
+          {intro}
         </p>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-          {['Art direction', 'AI Creativity', 'Motion', 'Web design'].map(s => (
+          {skills.map(s => (
             <span key={s} style={{
               fontFamily: INTER, fontSize: '10px',
               letterSpacing: '0.14em', textTransform: 'uppercase',
@@ -148,7 +179,19 @@ function VariantB() {
 }
 
 // ─── C — Manifeste ────────────────────────────────────────────────────────────
-function VariantC() {
+function VariantC({
+  name,
+  quote,
+  stats,
+  agencies,
+}: {
+  name: string
+  quote: string
+  stats: { value: string; label: string }[]
+  agencies: string[]
+}) {
+  const nameLines = name.split('\n')
+  const quoteLines = quote.split('\n')
   return (
     <section style={{
       height: '100svh',
@@ -168,7 +211,12 @@ function VariantC() {
         letterSpacing: '-0.04em',
         color: '#0a0a0a',
       }}>
-        Thibaud<br />Fossati
+        {nameLines.map((line, index) => (
+          <span key={`${line}-${index}`}>
+            {line}
+            {index < nameLines.length - 1 ? <br /> : null}
+          </span>
+        ))}
       </h1>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '80px', alignItems: 'end' }}>
@@ -180,28 +228,33 @@ function VariantC() {
           color: 'rgba(10,10,10,0.72)',
           letterSpacing: '-0.01em',
         }}>
-          "Crafting pipeline narratives<br />&amp; visuals for luxury brands."
+          {quoteLines.map((line, index) => (
+            <span key={`${line}-${index}`}>
+              {line}
+              {index < quoteLines.length - 1 ? <br /> : null}
+            </span>
+          ))}
         </p>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', alignItems: 'flex-end' }}>
           <div style={{ display: 'flex', gap: '36px' }}>
-            {[['15+', "Années"], ['50+', 'Marques'], ['5', 'Agences']].map(([n, l]) => (
-              <div key={l} style={{ textAlign: 'right' }}>
+            {stats.map(stat => (
+              <div key={stat.label} style={{ textAlign: 'right' }}>
                 <div style={{
                   fontFamily: BODONI, fontStyle: 'italic',
                   fontSize: '34px', fontWeight: 400,
                   letterSpacing: '-0.03em', color: '#0a0a0a', lineHeight: 1,
-                }}>{n}</div>
+                }}>{stat.value}</div>
                 <div style={{
                   fontFamily: INTER, fontSize: '9px',
                   letterSpacing: '0.16em', textTransform: 'uppercase',
                   color: 'rgba(10,10,10,0.3)', marginTop: '4px',
-                }}>{l}</div>
+                }}>{stat.label}</div>
               </div>
             ))}
           </div>
           <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-            {['Publicis', 'TBWA', 'BBDO', 'Ogilvy', 'DDB'].map(a => (
+            {agencies.map(a => (
               <span key={a} style={{
                 fontFamily: INTER, fontSize: '9px',
                 letterSpacing: '0.14em', textTransform: 'uppercase',
@@ -217,8 +270,10 @@ function VariantC() {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default function About() {
-  const [variant, setVariant] = useState<Variant>('A')
+  const content = useSiteContent()
+  const [variant, setVariant] = useState<Variant>(content.about.defaultVariant)
   useEffect(() => { window.scrollTo(0, 0) }, [])
+  useEffect(() => { setVariant(content.about.defaultVariant) }, [content.about.defaultVariant])
 
   return (
     <main style={{ paddingTop: '80px' }}>
@@ -247,9 +302,29 @@ export default function About() {
         ))}
       </div>
 
-      {variant === 'A' && <VariantA />}
-      {variant === 'B' && <VariantB />}
-      {variant === 'C' && <VariantC />}
+      {variant === 'A' && (
+        <VariantA
+          name={content.about.name}
+          roleLine={content.about.roleLine}
+          estLabel={content.about.estLabel}
+        />
+      )}
+      {variant === 'B' && (
+        <VariantB
+          name={content.about.name}
+          darkLabel={content.about.splitDarkLabel}
+          intro={content.about.splitIntro}
+          skills={content.about.skills}
+        />
+      )}
+      {variant === 'C' && (
+        <VariantC
+          name={content.about.name}
+          quote={content.about.manifestoQuote}
+          stats={content.about.stats}
+          agencies={content.about.agencies}
+        />
+      )}
 
       {/* CTA */}
       <section style={{
@@ -257,14 +332,14 @@ export default function About() {
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
       }}>
         <p style={{ fontFamily: BODONI, fontStyle: 'italic', fontSize: 'clamp(28px, 4vw, 52px)', fontWeight: 400, color: '#0a0a0a' }}>
-          Travaillons ensemble
+          {content.about.ctaTitle}
         </p>
         <Link to="/contact" style={{
           fontFamily: INTER, fontSize: '11px', letterSpacing: '0.15em',
           textTransform: 'uppercase', color: '#0a0a0a', textDecoration: 'none',
           borderBottom: '1px solid rgba(10,10,10,0.25)', paddingBottom: '4px',
         }}>
-          Contact →
+          {content.about.ctaLabel} →
         </Link>
       </section>
     </main>

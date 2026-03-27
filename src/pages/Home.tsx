@@ -1,15 +1,17 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import ParticleCanvas from '../components/ParticleCanvas'
-import MicroDetails from '../components/MicroDetails'
+// import MicroDetails from '../components/MicroDetails'  // ← désactivé pour tests fonds
 import TextReveal from '../components/TextReveal'
 import Magnet from '../components/Magnet'
-import { projects } from '../data/projects'
+import { useSiteContent } from '../hooks/useSiteContent'
 
 export default function Home() {
   const heroRef = useRef<HTMLElement>(null)
   const heroTextRef = useRef<HTMLDivElement>(null)
   const [hoveredProject, setHoveredProject] = useState<string | null>(null)
+  const content = useSiteContent()
+  const { home, projects, footer } = content
 
   useEffect(() => {
     window.scrollTo(0, 0)
@@ -41,7 +43,7 @@ export default function Home() {
           justifyContent: 'flex-end',
           padding: '0 48px 64px',
           overflow: 'hidden',
-          background: '#01050f',
+          background: '#030608',  // Ink Diffusion — eau noire profonde
         }}
       >
         {/* WebGL Refik Anadol particles */}
@@ -49,15 +51,15 @@ export default function Home() {
           <ParticleCanvas />
         </div>
 
-        {/* Micro-détails Canvas 2D overlay */}
-        <div style={{ position: 'absolute', inset: 0, zIndex: 1, pointerEvents: 'none' }}>
+        {/* Micro-détails Canvas 2D overlay — désactivé pour tests */}
+        {/* <div style={{ position: 'absolute', inset: 0, zIndex: 1, pointerEvents: 'none' }}>
           <MicroDetails />
-        </div>
+        </div> */}
 
         {/* Gradient bottom overlay — très léger sur fond clair */}
         <div style={{
           position: 'absolute', inset: 0, zIndex: 2,
-          background: 'linear-gradient(to top, rgba(1,5,15,0.90) 0%, rgba(1,5,15,0.3) 45%, transparent 70%)',
+          background: 'linear-gradient(to top, rgba(10,15,31,0.70) 0%, rgba(10,15,31,0.15) 50%, transparent 75%)',
           pointerEvents: 'none',
         }} />
 
@@ -73,13 +75,13 @@ export default function Home() {
                   fontSize: 'clamp(72px, 10vw, 160px)',
                   lineHeight: 0.9,
                   letterSpacing: '-0.03em',
-                  color: '#f0f4ff',
+                  color: '#f0f4ff',  // Void Chrome: texte blanc
                   display: 'block',
                   fontStyle: 'italic',
-                  textShadow: '0 2px 48px rgba(100,180,255,0.25)',
+                  textShadow: '0 2px 48px rgba(180,210,255,0.20)',
                 }}
               >
-                Art
+                {home.heroLine1}
               </span>
             </TextReveal>
             <TextReveal delay={350} className="block" as="span">
@@ -95,7 +97,7 @@ export default function Home() {
                   textShadow: '0 2px 48px rgba(100,180,255,0.25)',
                 }}
               >
-                Direction
+                {home.heroLine2}
               </span>
             </TextReveal>
           </div>
@@ -111,7 +113,7 @@ export default function Home() {
                 fontWeight: 300,
                 whiteSpace: 'nowrap',
               }}>
-                Art direction & AI crafted for premium brands
+                {home.heroTagline}
               </span>
             </TextReveal>
 
@@ -124,7 +126,7 @@ export default function Home() {
                 fontWeight: 300,
                 whiteSpace: 'nowrap',
               }}>
-                Thibaud Fossati — Paris
+                {home.heroLocation}
               </span>
             </TextReveal>
           </div>
@@ -181,7 +183,7 @@ export default function Home() {
                 fontStyle: 'italic',
               }}
             >
-              Projets
+              {home.projectsTitle}
             </span>
           </TextReveal>
           <TextReveal as="span">
@@ -337,7 +339,7 @@ export default function Home() {
                   display: 'block',
                 }}
               >
-                Services
+                {home.servicesTitle}
               </span>
             </TextReveal>
             <TextReveal as="p" delay={300}>
@@ -351,22 +353,14 @@ export default function Home() {
                   maxWidth: '360px',
                 }}
               >
-                Pour les marques premium qui veulent une direction artistique
-                singulière, nourrie par 15 ans d'expérience et l'IA comme outil créatif.
+                {home.servicesIntro}
               </span>
             </TextReveal>
           </div>
 
           {/* Right — service list */}
           <div>
-            {[
-              { name: 'Art direction', desc: 'Identité visuelle, campagnes, key visuals' },
-              { name: 'AI Creativity', desc: 'Images et contenus générés par IA' },
-              { name: 'Social media', desc: 'Stratégie et production de contenus' },
-              { name: 'Web design', desc: 'Interfaces, UX, digital experiences' },
-              { name: 'Motion design', desc: 'Animation, vidéo, reels' },
-              { name: 'Editing', desc: 'Post-production, retouche, étalonnage' },
-            ].map((service, i) => (
+            {home.services.map((service, i) => (
               <div
                 key={service.name}
                 style={{
@@ -416,7 +410,7 @@ export default function Home() {
               color: 'rgba(10,10,10,0.35)',
             }}
           >
-            Thibaud Fossati · Paris
+            {home.aboutEyebrow}
           </span>
         </TextReveal>
 
@@ -433,7 +427,7 @@ export default function Home() {
               display: 'block',
             }}
           >
-            "15 ans à collaborer avec Publicis, TBWA, BBDO, Ogilvy — et l'IA comme nouveau médium."
+            {home.aboutQuote}
           </span>
         </TextReveal>
 
@@ -454,7 +448,7 @@ export default function Home() {
               marginTop: '16px',
             }}
           >
-            À propos <span>→</span>
+            {home.aboutCtaLabel} <span>→</span>
           </Link>
         </TextReveal>
       </section>
@@ -480,11 +474,16 @@ export default function Home() {
               fontStyle: 'italic',
             }}
           >
-            Let's create<br />something<br />remarkable.
+            {home.contactCtaTitle.split('\n').map((line, index) => (
+              <span key={`${line}-${index}`}>
+                {line}
+                {index < home.contactCtaTitle.split('\n').length - 1 ? <br /> : null}
+              </span>
+            ))}
           </span>
         </TextReveal>
 
-        <TextReveal delay={200} as="div">
+        <TextReveal delay={200} as="div" className="reveal-overflow-visible">
           <Magnet strength={0.5} radius={160}>
             <Link
               to="/contact"
@@ -513,7 +512,7 @@ export default function Home() {
                 ;(e.currentTarget as HTMLElement).style.color = '#0a0a0a'
               }}
             >
-              Contact
+              {home.contactCtaButton}
             </Link>
           </Magnet>
         </TextReveal>
@@ -533,13 +532,14 @@ export default function Home() {
           textTransform: 'uppercase',
         }}
       >
-        <span>© InStories 2026</span>
-        <span>RCS 850 498 635 R.C.S. Paris</span>
+        <span>{footer.copyright}</span>
+        <span>{footer.registration}</span>
         <div style={{ display: 'flex', gap: '24px' }}>
-          <a href="https://instagram.com/instories_ai" target="_blank" rel="noreferrer" style={{ color: 'inherit', textDecoration: 'none' }}>Instagram</a>
-          <a href="#" style={{ color: 'inherit', textDecoration: 'none' }}>Behance</a>
-          <a href="https://tiktok.com/@ghost.in.gloss" target="_blank" rel="noreferrer" style={{ color: 'inherit', textDecoration: 'none' }}>TikTok</a>
-          <a href="#" style={{ color: 'inherit', textDecoration: 'none' }}>LinkedIn</a>
+          {footer.socials.map(link => (
+            <a key={link.label} href={link.href} target="_blank" rel="noreferrer" style={{ color: 'inherit', textDecoration: 'none' }}>
+              {link.label}
+            </a>
+          ))}
         </div>
       </footer>
 

@@ -5,9 +5,10 @@ in vec2 a_pos;
 void main() { gl_Position = vec4(a_pos, 0.0, 1.0); }
 `
 
-// ── Refik Anadol Style — Machine Hallucinations ────────────────────────────
-// Fond espace profond + rubans lumineux en bleu glace / cyan
-// Technique: flow field domain-warped → zero-crossing ribbons multi-échelle
+// ── Ink Diffusion 3D ──────────────────────────────────────────────────────
+// Encre bioluminescente qui se diffuse dans l'eau sombre en 3D
+// 4 couches de profondeur avec parallax + densité gaussienne
+// Mouvement organique et imprévisible — jamais la même forme
 const FRAG = `#version 300 es
 precision highp float;
 
@@ -16,95 +17,118 @@ uniform vec2  u_mouse;
 uniform vec2  u_res;
 out vec4 fragColor;
 
-// ── C: Hash sans sin() — Dave Hoskins ─────────────────────────────────────
+// ── Hash sans sin() ───────────────────────────────────────────────────────
 float hash(float x, float y) {
-  vec2 p = fract(vec2(x, y) * vec2(0.1031, 0.1030));
-  p += dot(p, p.yx + 33.33);
-  return fract((p.x + p.y) * p.x);
+  vec2 p = fract(vec2(x,y)*vec2(.1031,.1030));
+  p += dot(p,p.yx+33.33);
+  return fract((p.x+p.y)*p.x);
 }
-
 float sn(vec2 p) {
-  vec2 i = floor(p); vec2 f = fract(p);
-  vec2 u = f*f*(3.0-2.0*f);
-  return mix(
-    mix(hash(i.x,       i.y),       hash(i.x+1.0, i.y),       u.x),
-    mix(hash(i.x,       i.y+1.0),   hash(i.x+1.0, i.y+1.0),   u.x), u.y);
+  vec2 i=floor(p), f=fract(p), u=f*f*(3.-2.*f);
+  return mix(mix(hash(i.x,i.y), hash(i.x+1.,i.y), u.x),
+             mix(hash(i.x,i.y+1.), hash(i.x+1.,i.y+1.), u.x), u.y);
 }
-
-// ── D: fBm 3 octaves ──────────────────────────────────────────────────────
+// fBm 4 octaves — plus de détails pour l'encre
 float fbm(vec2 p) {
-  float v=0.0, a=0.5, f=1.0, tot=0.0;
-  for(int i=0;i<3;i++){v+=sn(p*f)*a;tot+=a;f*=2.0;a*=0.5;}
+  float v=0.,a=.5,f=1.,tot=0.;
+  for(int i=0;i<4;i++){v+=sn(p*f)*a;tot+=a;f*=2.;a*=.48;}
   return v/tot;
 }
 
-// ── Domain warp double — mouvement organique lent ─────────────────────────
+// ── Domain warp triple — très organique ──────────────────────────────────
 vec2 warp(vec2 p, float t) {
-  vec2 q = vec2(
-    fbm(p + vec2(t*0.013,          0.31)),
-    fbm(p + vec2(5.20 + t*0.011,   1.30))
-  );
-  return p + 2.6 * q;
+  vec2 q = vec2(fbm(p + vec2(t*.007, .31)),
+                fbm(p + vec2(5.2 + t*.006, 1.3)));
+  vec2 r = vec2(fbm(p + 2.2*q + vec2(1.7 + t*.005, 9.2)),
+                fbm(p + 2.2*q + vec2(8.3, 2.8 - t*.004)));
+  return p + 2.4*r;
 }
 
-// ── Ruban lumineux — pic aux zéros du bruit (pas de taches) ───────────────
-float ribbon(float n, float freq, float sharp) {
-  float r = abs(fract(n * freq + 0.5) * 2.0 - 1.0);
-  return pow(max(0.0, 1.0 - r), sharp);
+// ── Densité d'encre — seuil soft : seulement le top ~25% du fBm ──────────
+// Crée des masses isolées sur fond noir (pas de brouillard global)
+float inkDensity(vec2 p, float t, float freq, float offset) {
+  vec2 wp = warp(p * freq, t);
+  float n  = fbm(wp + offset);
+
+  // Seuil : 0 en dessous de .48, monte vers 1 au-dessus de .70
+  // → seulement les crêtes du bruit deviennent encre
+  float d = smoothstep(.48, .72, n);
+  return d * d; // carré = encore plus contrasté
 }
 
-// ── Palette Refik Anadol — vide cosmique → glace → blanc électrique ───────
-vec3 anadolPalette(float v) {
-  v = clamp(v, 0.0, 1.0);
-  vec3 void_  = vec3(0.008, 0.016, 0.050); // espace profond
-  vec3 deep   = vec3(0.028, 0.085, 0.230); // bleu nuit
-  vec3 ice    = vec3(0.095, 0.430, 0.820); // bleu glace signature
-  vec3 bright = vec3(0.520, 0.840, 0.980); // cyan lumineux
-  vec3 hot    = vec3(0.940, 0.975, 1.000); // blanc chaud (coeur)
-
-  if(v < 0.08) return mix(void_,  deep,   v/0.08);
-  if(v < 0.28) return mix(deep,   ice,    (v-0.08)/0.20);
-  if(v < 0.62) return mix(ice,    bright, (v-0.28)/0.34);
-  return              mix(bright, hot,    (v-0.62)/0.38);
+// ── Tendrons : filaments fins autour des masses ───────────────────────────
+float tendril(vec2 p, float t, float freq) {
+  vec2 wp = warp(p * freq, t * 1.3);
+  float n  = fbm(wp);
+  // Crêtes fines aux iso-lignes
+  float d  = abs(fract(n * 4.5 + .5) * 2. - 1.);
+  return smoothstep(.12, .0, d) * .4;
 }
 
 void main() {
-  vec2 uv = vec2(gl_FragCoord.x, u_res.y - gl_FragCoord.y) / u_res;
+  vec2 uv  = vec2(gl_FragCoord.x, u_res.y - gl_FragCoord.y) / u_res;
   float asp = u_res.x / u_res.y;
   vec2  p   = vec2(uv.x * asp, uv.y);
-  vec2  ctr = vec2(asp * 0.5, 0.5);
+  vec2  ctr = vec2(asp*.5, .5);
 
-  // ── Mouse: gravité organique sur les rubans ───────────────────────────
-  vec2  mp     = vec2(u_mouse.x * asp, u_mouse.y);
-  vec2  mDelta = p - mp;
-  float mPull  = exp(-dot(mDelta, mDelta) * 3.5) * 0.38;
-  vec2  np     = p - mDelta * mPull * 0.14;
+  // ── Mouse : distorsion locale (goutte d'encre) ───────────────────────
+  vec2  mp    = vec2(u_mouse.x * asp, u_mouse.y);
+  vec2  mDiff = p - mp;
+  float mDist = length(mDiff);
+  // Déplace légèrement les couches vers/autour du curseur
+  vec2  mPush = mDiff * exp(-mDist*mDist*6.) * .08;
 
-  // ── Domain warp (calculé une seule fois) ─────────────────────────────
-  vec2 wp = warp((np - ctr) * 0.88 + ctr, u_t);
+  // ── 4 couches de profondeur — parallax ────────────────────────────────
+  // Chaque couche : décalage parallax différent, vitesse différente
+  vec2 p0 = p - (mp - ctr)*.000 + mPush*.10; // fond fixe
+  vec2 p1 = p - (mp - ctr)*.020 + mPush*.25; // profond
+  vec2 p2 = p - (mp - ctr)*.055 + mPush*.55; // moyen
+  vec2 p3 = p - (mp - ctr)*.100 + mPush*.90; // avant-plan
 
-  // ── 3 couches fBm sur le même warp ───────────────────────────────────
-  float n1 = fbm(wp);
-  float n2 = fbm(wp * 1.65 + vec2(3.71, 1.13));
-  float n3 = fbm(wp * 2.90 + vec2(7.34, 5.27));
+  // ── Densités sharpenées — concentre la lumière aux cœurs ────────────
+  float d0 = pow(inkDensity(p0, u_t * .40, .70, 0.0),  3.5);
+  float d1 = pow(inkDensity(p1, u_t * .60, .95, 3.71), 2.8);
+  float d2 = pow(inkDensity(p2, u_t * .82, 1.25, 7.13),2.2);
+  float d3 = pow(inkDensity(p3, u_t * 1.0, 1.60, 1.94),2.0);
 
-  // ── Rubans: grand / moyen / fin ───────────────────────────────────────
-  float r1 = ribbon(n1, 4.5,  7.0);   // grands flots
-  float r2 = ribbon(n2, 9.5,  13.0);  // rubans moyens
-  float r3 = ribbon(n3, 17.0, 21.0);  // fils fins
+  float ten = tendril(p2, u_t, 1.8) + tendril(p3, u_t, 2.4)*.6;
 
-  float flow = r1*0.52 + r2*0.32 + r3*0.16;
+  // ── Palette sombre — eau noire, encre lumineuse par couches ─────────
+  vec3 col0  = vec3(.005, .003, .022); // fond quasi-noir / violet nuit
+  vec3 col1  = vec3(.008, .018, .100); // bleu nuit profond
+  vec3 col2  = vec3(.020, .090, .340); // bleu moyen (pas trop vif)
+  vec3 col3  = vec3(.060, .240, .580); // bleu-cyan avant-plan
+  vec3 colT  = vec3(.280, .600, .900); // filaments — cyan
+  vec3 colHot= vec3(.600, .860, 1.000);// cœurs seulement — blanc-cyan
+
+  // ── Composition sur noir pur ──────────────────────────────────────────
+  vec3 col = vec3(0.0);
+
+  // Couches de base — max blending, pas d'accumulation
+  col = max(col, col0 * d0);
+  col = max(col, col1 * d1);
+  col = max(col, col2 * d2);
+  col = max(col, col3 * d3);
+
+  // Cœur lumineux — seulement aux intersections denses (rare)
+  col += colHot * pow(d2 * d3, 1.2) * 1.6;
+
+  // Filaments — visibles seulement là où il y a de l'encre
+  col += colT * ten * max(d2, d3) * .60;
 
   // ── Halo souris ───────────────────────────────────────────────────────
-  float mGlow = mPull * 0.55;
+  float mGlow = exp(-mDist * mDist * 5.0) * .35;
+  col += col3  * mGlow;
+  col += colHot * exp(-mDist * mDist * 25.) * .30;
 
-  // ── Vignette douce: densité vers le centre de la composition ─────────
-  float vig = 1.0 - smoothstep(0.30, 1.05, length(np - ctr));
+  // ── Vignette quadratique — bords très sombres ─────────────────────────
+  float vig = 1. - smoothstep(.15, 1.08, length(p - ctr) * .88);
+  col *= vig * vig;
 
-  float intensity = (flow + mGlow) * (0.65 + 0.35 * vig);
-  intensity = pow(clamp(intensity, 0.0, 1.0), 0.70); // récupère les basses lumin.
+  // ── Simple clamp — pas de tone mapping qui lève les noirs ────────────
+  col = clamp(col, 0., 1.);
 
-  fragColor = vec4(anadolPalette(intensity), 1.0);
+  fragColor = vec4(col, 1.0);
 }
 `
 
@@ -115,19 +139,16 @@ export default function ParticleCanvas() {
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
-
     const gl = canvas.getContext('webgl2')
     if (!gl) return
 
     const compile = (type: number, src: string) => {
       const s = gl.createShader(type)!
-      gl.shaderSource(s, src)
-      gl.compileShader(s)
+      gl.shaderSource(s, src); gl.compileShader(s)
       if (!gl.getShaderParameter(s, gl.COMPILE_STATUS))
         console.error(gl.getShaderInfoLog(s))
       return s
     }
-
     const prog = gl.createProgram()!
     gl.attachShader(prog, compile(gl.VERTEX_SHADER,   VERT))
     gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, FRAG))
@@ -138,7 +159,7 @@ export default function ParticleCanvas() {
 
     const buf = gl.createBuffer()
     gl.bindBuffer(gl.ARRAY_BUFFER, buf)
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW)
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1,1,-1,-1,1,1,1]), gl.STATIC_DRAW)
     const aPos = gl.getAttribLocation(prog, 'a_pos')
     gl.enableVertexAttribArray(aPos)
     gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0)
@@ -148,39 +169,31 @@ export default function ParticleCanvas() {
     const uRes   = gl.getUniformLocation(prog, 'u_res')
 
     let cw = 0, ch = 0
-
     const setSize = () => {
-      const hero = canvas.closest('section') || canvas.parentElement
-      const sw   = hero ? hero.clientWidth  : window.innerWidth
-      const sh   = hero ? hero.clientHeight : window.innerHeight
-      // ── A: DPR cap 1.5 ────────────────────────────────────────────────
-      const dpr  = Math.min(window.devicePixelRatio || 1, 1.5)
-      cw = Math.round(sw * dpr)
-      ch = Math.round(sh * dpr)
-      canvas.width  = cw
-      canvas.height = ch
-      canvas.style.width  = sw + 'px'
-      canvas.style.height = sh + 'px'
+      const el  = canvas.closest('section') || canvas.parentElement
+      const sw  = el ? el.clientWidth  : window.innerWidth
+      const sh  = el ? el.clientHeight : window.innerHeight
+      const dpr = Math.min(window.devicePixelRatio || 1, 1.5)
+      cw = Math.round(sw * dpr); ch = Math.round(sh * dpr)
+      canvas.width = cw; canvas.height = ch
+      canvas.style.width = sw + 'px'; canvas.style.height = sh + 'px'
       gl.viewport(0, 0, cw, ch)
     }
-
     const ro = new ResizeObserver(setSize)
     ro.observe(canvas.parentElement || canvas)
     setSize()
 
-    const mouse = { x: 0.5, y: 0.5 }
+    const mouse = { x: .5, y: .5 }
     const onMove = (e: MouseEvent) => {
-      const rect = canvas.getBoundingClientRect()
-      mouse.x = (e.clientX - rect.left) / rect.width
-      mouse.y = (e.clientY - rect.top)  / rect.height
+      const r = canvas.getBoundingClientRect()
+      mouse.x = (e.clientX - r.left) / r.width
+      mouse.y = (e.clientY - r.top)  / r.height
     }
     window.addEventListener('mousemove', onMove)
 
-    // ── B: Pause quand hors viewport ─────────────────────────────────────
     let visible = true
     const io = new IntersectionObserver(
-      ([entry]) => { visible = entry.isIntersecting },
-      { threshold: 0 }
+      ([e]) => { visible = e.isIntersecting }, { threshold: 0 }
     )
     io.observe(canvas)
 
@@ -188,27 +201,27 @@ export default function ParticleCanvas() {
     const draw = () => {
       rafRef.current = requestAnimationFrame(draw)
       if (!visible) return
-      t += 0.008  // mouvement lent et majestueux (Anadol)
-      gl.uniform1f(uT, t)
+      t += 0.007  // lent et organique
+
+      gl.uniform1f(uT,    t)
       gl.uniform2f(uMouse, mouse.x, mouse.y)
-      gl.uniform2f(uRes, cw, ch)
+      gl.uniform2f(uRes,   cw, ch)
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
     }
     draw()
 
     return () => {
       cancelAnimationFrame(rafRef.current)
-      window.removeEventListener('mousemove', onMove)
-      ro.disconnect()
       io.disconnect()
+      ro.disconnect()
+      window.removeEventListener('mousemove', onMove)
     }
   }, [])
 
   return (
     <canvas
       ref={canvasRef}
-      id="particle-canvas"
-      style={{ display: 'block' }}
+      style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
     />
   )
 }

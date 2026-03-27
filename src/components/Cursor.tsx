@@ -1,134 +1,128 @@
 import { useEffect, useRef } from 'react'
 
 // ─────────────────────────────────────────────────────────────────────────────
-// GRAPHITE PULSE CURSOR
-// Principe : un trait graphite qui respire, tremble légèrement (main humaine),
-// s'oriente avec le mouvement et porte la texture implicite du graphite sur papier.
+// ADAPTIVE CIRCLE CURSOR — Détecte la couleur de fond sous le curseur
+// Blanc sur sombre, noir sur clair — via elementFromPoint + computed styles
 // ─────────────────────────────────────────────────────────────────────────────
 
-// Capsule orientée — le "trait" principal
-function strokeMark(
-  vx: number, vy: number,
-  breath: number,
-  trX: number, trY: number
-): string {
-  const speed = Math.sqrt(vx * vx + vy * vy)
-  const angle = Math.atan2(vy, vx)
-
-  // Longueur : s'allonge avec la vitesse, respire lentement
-  const len = (9 + Math.min(speed * 0.4, 10)) * breath
-  const wid = (1.4 - Math.min(speed * 0.015, 0.6)) * breath // s'affine à vitesse
-
-  const cos = Math.cos(angle), sin = Math.sin(angle)
-  const px  = -sin, py  = cos   // perpendiculaire
-
-  // 4 coins de la capsule + micro-tremblement
-  const ax = -cos * len * 0.5 + px * wid + trX
-  const ay = -sin * len * 0.5 + py * wid + trY
-  const bx =  cos * len * 0.5 + px * wid + trX
-  const by =  sin * len * 0.5 + py * wid + trY
-  const cx =  cos * len * 0.5 - px * wid + trX
-  const cy =  sin * len * 0.5 - py * wid + trY
-  const dx = -cos * len * 0.5 - px * wid + trX
-  const dy = -sin * len * 0.5 - py * wid + trY
-
-  const r = (n: number) => n.toFixed(2)
-  // Extrémités arrondies avec quadratiques légèrement décalées → trait naturel
-  return `M ${r(ax)} ${r(ay)}
-    Q ${r(bx + px * wid * 0.8)} ${r(by + py * wid * 0.8)} ${r(bx)} ${r(by)}
-    L ${r(cx)} ${r(cy)}
-    Q ${r(dx - px * wid * 0.8)} ${r(dy - py * wid * 0.8)} ${r(dx)} ${r(dy)} Z`
-}
-
-// Quadrilatère irrégulier "dessiné à la main" — le follower
-function handRect(
-  offX: number, offY: number,
-  t: number,
-  breath: number
-): string {
-  const s = 22 * breath
-
-  // 4 coins avec oscillations indépendantes → jamais parfaitement carré
-  const corners = [
-    [-s, -s], [ s, -s], [ s,  s], [-s,  s]
-  ].map(([cx, cy], i) => ({
-    x: cx + offX + Math.sin(t * 0.55 + i * 1.7) * 2.2 + Math.sin(t * 1.3 + i * 2.9) * 1.0,
-    y: cy + offY + Math.cos(t * 0.48 + i * 2.1) * 2.2 + Math.cos(t * 1.1 + i * 1.3) * 1.0,
-  }))
-
-  // Côtés légèrement bossus — trait tiré à la main
-  const mid = (a: {x:number,y:number}, b: {x:number,y:number}, noise: number) => ({
-    x: (a.x + b.x) / 2 + noise,
-    y: (a.y + b.y) / 2 + noise * 0.6,
-  })
-
-  const r = (n: number) => n.toFixed(2)
-  const [c0, c1, c2, c3] = corners
-  const m0 = mid(c0, c1, Math.sin(t * 0.9 + 0.5) * 1.5)
-  const m1 = mid(c1, c2, Math.sin(t * 0.7 + 1.8) * 1.5)
-  const m2 = mid(c2, c3, Math.sin(t * 1.1 + 3.2) * 1.5)
-  const m3 = mid(c3, c0, Math.sin(t * 0.8 + 4.6) * 1.5)
-
-  return `M ${r(c0.x)} ${r(c0.y)}
-    Q ${r(m0.x)} ${r(m0.y)} ${r(c1.x)} ${r(c1.y)}
-    Q ${r(m1.x)} ${r(m1.y)} ${r(c2.x)} ${r(c2.y)}
-    Q ${r(m2.x)} ${r(m2.y)} ${r(c3.x)} ${r(c3.y)}
-    Q ${r(m3.x)} ${r(m3.y)} ${r(c0.x)} ${r(c0.y)} Z`
-}
-
 export default function Cursor() {
-  const svgRef  = useRef<SVGSVGElement>(null)
-  const markRef = useRef<SVGPathElement>(null)
-  const quadRef = useRef<SVGPathElement>(null)
+  const mainRef = useRef<HTMLDivElement>(null)
+  const followerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    const svg  = svgRef.current
-    const mark = markRef.current
-    const quad = quadRef.current
-    if (!svg || !mark || !quad) return
+    const main = mainRef.current
+    const follower = followerRef.current
 
-    let mx = -300, my = -300
-    let fx = -300, fy = -300   // follower lerpé
-    let pmx = mx,  pmy = my
-    let vx = 0, vy = 0
-    let t = 0
-    let raf: number
+    if (!main || !follower) return
 
-    const onMove = (e: MouseEvent) => { mx = e.clientX; my = e.clientY }
+    let mx = -50, my = -50
+    let fx = -50, fy = -50
+    let isDark = true  // true = blanc, false = noir
+    let checkCounter = 0
+
+    const onMove = (e: MouseEvent) => {
+      mx = e.clientX
+      my = e.clientY
+    }
+
+    // Parse couleur RGB string
+    const parseRGB = (rgbStr: string): [number, number, number] | null => {
+      const match = rgbStr.match(/\d+/g)
+      if (match && match.length >= 3) {
+        return [parseInt(match[0]), parseInt(match[1]), parseInt(match[2])]
+      }
+      return null
+    }
+
+    // Calcul luminance
+    const getLuminance = (rgb: [number, number, number]): number => {
+      const [r, g, b] = rgb
+      return (0.299 * r + 0.587 * g + 0.114 * b) / 255
+    }
+
+    // Détecte couleur sous le curseur via DOM
+    const detectBackgroundColor = (x: number, y: number): number => {
+      try {
+        // Cacher temporairement le curseur pour ne pas l'inclure
+        main.style.display = 'none'
+        follower.style.display = 'none'
+
+        const el = document.elementFromPoint(x, y)
+
+        main.style.display = 'block'
+        follower.style.display = 'block'
+
+        if (!el) return isDark ? 0.2 : 0.8
+
+        let current = el as HTMLElement | null
+
+        // Remonte l'arbre DOM pour trouver une couleur de fond
+        while (current) {
+          const bgColor = window.getComputedStyle(current).backgroundColor
+
+          if (bgColor && bgColor !== 'rgba(0, 0, 0, 0)' && bgColor !== 'transparent') {
+            const rgb = parseRGB(bgColor)
+            if (rgb) {
+              return getLuminance(rgb)
+            }
+          }
+
+          current = current.parentElement
+        }
+
+        return isDark ? 0.2 : 0.8
+      } catch {
+        return isDark ? 0.2 : 0.8
+      }
+    }
+
+    const updateCursorColor = (lum: number) => {
+      // lum > 0.5 = fond CLAIR → curseur NOIR
+      // lum < 0.5 = fond SOMBRE → curseur BLANC
+      const bgIsLight = lum > 0.5
+
+      if (bgIsLight === isDark) {  // isDark = "curseur est blanc"
+        isDark = !bgIsLight
+
+        if (!bgIsLight) {
+          // Fond sombre → curseur blanc
+          main.style.background = 'rgba(255, 255, 255, 0.95)'
+          main.style.boxShadow = '0 0 10px rgba(140, 210, 255, 0.9)'
+          follower.style.borderColor = 'rgba(255, 255, 255, 0.7)'
+        } else {
+          // Fond clair → curseur noir
+          main.style.background = 'rgba(20, 16, 14, 0.95)'
+          main.style.boxShadow = '0 0 6px rgba(0, 0, 0, 0.2)'
+          follower.style.borderColor = 'rgba(20, 16, 14, 0.6)'
+        }
+      }
+    }
 
     const frame = () => {
-      raf = requestAnimationFrame(frame)
-      t += 0.018
+      // Main circle — exact position
+      main.style.left = `${mx - 4}px`
+      main.style.top = `${my - 4}px`
 
-      // Vélocité lissée
-      vx = vx * 0.72 + (mx - pmx) * 0.28
-      vy = vy * 0.72 + (my - pmy) * 0.28
-      pmx = mx; pmy = my
+      // Follower — lerp avec inertie douce
+      fx += (mx - fx) * 0.12
+      fy += (my - fy) * 0.12
 
-      // Follower avec inertie douce
-      fx += (mx - fx) * 0.08
-      fy += (my - fy) * 0.08
+      follower.style.left = `${fx - 15}px`
+      follower.style.top = `${fy - 15}px`
 
-      // Respiration lente — cycle ~4 s
-      const breath = 1 + Math.sin(t * 1.6) * 0.10
+      // Détecte couleur tous les 3 frames (perf)
+      checkCounter++
+      if (checkCounter > 2) {
+        checkCounter = 0
+        const lum = detectBackgroundColor(mx, my)
+        updateCursorColor(lum)
+      }
 
-      // Micro-tremblement — superposition 2 fréquences (signature humaine)
-      const trX = Math.sin(t * 14.7) * 0.35 + Math.sin(t * 9.1) * 0.20
-      const trY = Math.cos(t * 12.3) * 0.35 + Math.cos(t * 7.8) * 0.20
-
-      // Positionne le SVG sur le curseur exact
-      svg.style.left = `${mx}px`
-      svg.style.top  = `${my}px`
-
-      // Trait graphite
-      mark.setAttribute('d', strokeMark(vx, vy, breath, trX, trY))
-
-      // Cadre irrégulier follower
-      quad.setAttribute('d', handRect(fx - mx, fy - my, t, breath))
+      requestAnimationFrame(frame)
     }
 
     window.addEventListener('mousemove', onMove)
-    raf = requestAnimationFrame(frame)
+    const raf = requestAnimationFrame(frame)
 
     return () => {
       window.removeEventListener('mousemove', onMove)
@@ -137,41 +131,37 @@ export default function Cursor() {
   }, [])
 
   return (
-    <svg
-      ref={svgRef}
-      style={{
-        position: 'fixed',
-        pointerEvents: 'none',
-        zIndex: 10000,
-        overflow: 'visible',
-        width: 0,
-        height: 0,
-        mixBlendMode: 'difference',
-      }}
-    >
-      <defs>
-        {/* Texture graphite — grain fractal sur les bords */}
-        <filter id="graphite" x="-40%" y="-40%" width="180%" height="180%">
-          <feTurbulence type="fractalNoise" baseFrequency="0.72 0.58"
-            numOctaves="3" seed="12" result="noise"/>
-          <feDisplacementMap in="SourceGraphic" in2="noise"
-            scale="1.6" xChannelSelector="R" yChannelSelector="G"/>
-        </filter>
-      </defs>
-
-      {/* Trait principal — graphite, texturé */}
-      <path ref={markRef} fill="white" filter="url(#graphite)" />
-
-      {/* Cadre irrégulier — contour "dessiné à la main" */}
-      <path
-        ref={quadRef}
-        fill="none"
-        stroke="white"
-        strokeWidth="0.9"
-        strokeLinejoin="round"
-        filter="url(#graphite)"
-        opacity="0.55"
+    <>
+      {/* Main circle — adaptatif (blanc ou noir) */}
+      <div
+        ref={mainRef}
+        style={{
+          position: 'fixed',
+          width: '8px',
+          height: '8px',
+          borderRadius: '50%',
+          background: 'rgba(255, 255, 255, 0.95)',
+          pointerEvents: 'none',
+          zIndex: 10000,
+          boxShadow: '0 0 10px rgba(140, 210, 255, 0.9)',
+          transition: 'background 0.15s ease, box-shadow 0.15s ease',
+        }}
       />
-    </svg>
+
+      {/* Follower — grand cercle qui suit (border adaptatif) */}
+      <div
+        ref={followerRef}
+        style={{
+          position: 'fixed',
+          width: '30px',
+          height: '30px',
+          borderRadius: '50%',
+          border: '1.5px solid rgba(255, 255, 255, 0.7)',
+          pointerEvents: 'none',
+          zIndex: 9999,
+          transition: 'border-color 0.15s ease',
+        }}
+      />
+    </>
   )
 }

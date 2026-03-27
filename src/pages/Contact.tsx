@@ -1,7 +1,10 @@
 import { useEffect } from 'react'
 import TextReveal from '../components/TextReveal'
+import { useSiteContent } from '../hooks/useSiteContent'
 
 export default function Contact() {
+  const content = useSiteContent()
+  const { contact } = content
   useEffect(() => { window.scrollTo(0, 0) }, [])
 
   return (
@@ -18,7 +21,7 @@ export default function Contact() {
             display: 'block',
             marginBottom: '80px',
           }}>
-            Contact
+            {contact.title}
           </span>
         </TextReveal>
 
@@ -29,7 +32,7 @@ export default function Contact() {
               <div style={{ fontSize: '10px', letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(10,10,10,0.3)', marginBottom: '12px' }}>
                 Email
               </div>
-              <a href="mailto:contact@instories.fr" style={{
+              <a href={`mailto:${contact.email}`} style={{
                 fontFamily: 'Bodoni Moda, serif',
                 fontSize: '28px',
                 fontWeight: 300,
@@ -39,7 +42,7 @@ export default function Contact() {
                 paddingBottom: '4px',
                 fontStyle: 'italic',
               }}>
-                contact@instories.fr
+                {contact.email}
               </a>
             </div>
 
@@ -47,7 +50,7 @@ export default function Contact() {
               <div style={{ fontSize: '10px', letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(10,10,10,0.3)', marginBottom: '12px' }}>
                 Téléphone
               </div>
-              <a href="tel:+33603361836" style={{
+              <a href={`tel:${contact.phone.replace(/\s+/g, '')}`} style={{
                 fontFamily: 'Bodoni Moda, serif',
                 fontSize: '28px',
                 fontWeight: 300,
@@ -55,7 +58,7 @@ export default function Contact() {
                 textDecoration: 'none',
                 fontStyle: 'italic',
               }}>
-                06 03 36 18 36
+                {contact.phone}
               </a>
             </div>
 
@@ -64,8 +67,12 @@ export default function Contact() {
                 Studio
               </div>
               <p style={{ fontSize: '15px', lineHeight: 1.7, color: 'rgba(10,10,10,0.6)', fontWeight: 300 }}>
-                72, rue des Archives<br />
-                75003 Paris, France
+                {contact.addressLines.map((line, index) => (
+                  <span key={`${line}-${index}`}>
+                    {line}
+                    {index < contact.addressLines.length - 1 ? <br /> : null}
+                  </span>
+                ))}
               </p>
             </div>
 
@@ -74,12 +81,7 @@ export default function Contact() {
                 Réseaux
               </div>
               <div style={{ display: 'flex', gap: '20px' }}>
-                {[
-                  { label: 'Instagram', href: 'https://instagram.com/instories_ai' },
-                  { label: 'Behance', href: '#' },
-                  { label: 'TikTok', href: 'https://tiktok.com/@ghost.in.gloss' },
-                  { label: 'LinkedIn', href: '#' },
-                ].map(({ label, href }) => (
+                {contact.socials.map(({ label, href }) => (
                   <a key={label} href={href} target="_blank" rel="noreferrer" style={{
                     fontSize: '11px',
                     letterSpacing: '0.12em',
@@ -106,7 +108,7 @@ export default function Contact() {
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '24px' }}>
               <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#4ade80', boxShadow: '0 0 10px #4ade80' }} />
               <span style={{ fontSize: '11px', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(10,10,10,0.4)' }}>
-                Disponible pour de nouveaux projets
+                {contact.availabilityLabel}
               </span>
             </div>
             <p style={{
@@ -117,7 +119,7 @@ export default function Contact() {
               color: '#0a0a0a',
               fontStyle: 'italic',
             }}>
-              Parlez-moi de votre projet, et créons ensemble quelque chose de remarquable.
+              {contact.availabilityText}
             </p>
           </div>
         </div>

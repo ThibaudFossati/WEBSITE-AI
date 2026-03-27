@@ -1,10 +1,11 @@
 import { useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { projects } from '../data/projects'
 import TextReveal from '../components/TextReveal'
+import { useSiteContent } from '../hooks/useSiteContent'
 
 export default function Project() {
   const { id } = useParams<{ id: string }>()
+  const { projects } = useSiteContent()
   const project = projects.find(p => p.id === id)
   const nextProject = projects[(projects.findIndex(p => p.id === id) + 1) % projects.length]
 
@@ -57,10 +58,18 @@ export default function Project() {
       </section>
 
       {/* Cover placeholder */}
-      <div style={{ height: '60vh', background: project.color, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <span style={{ fontSize: '13px', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(10,10,10,0.25)' }}>
-          Visuel à venir
-        </span>
+      <div style={{ height: '60vh', background: project.color, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+        {project.cover ? (
+          <img
+            src={project.cover}
+            alt={project.title}
+            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+          />
+        ) : (
+          <span style={{ fontSize: '13px', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(10,10,10,0.25)' }}>
+            Visuel à venir
+          </span>
+        )}
       </div>
 
       {/* Content */}
@@ -117,6 +126,20 @@ export default function Project() {
           </div>
         </div>
       </section>
+
+      {project.images.length > 0 && (
+        <section style={{ padding: '0 48px 80px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+          {project.images.map((image, index) => (
+            <div key={`${image}-${index}`} style={{ aspectRatio: '4 / 5', background: project.color, overflow: 'hidden' }}>
+              <img
+                src={image}
+                alt={`${project.title} ${index + 1}`}
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              />
+            </div>
+          ))}
+        </section>
+      )}
 
       {/* Next project */}
       <Link to={`/projects/${nextProject.id}`} style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
