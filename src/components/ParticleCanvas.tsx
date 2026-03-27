@@ -97,6 +97,9 @@ void main() {
   vec2 p = (fragCoord * 2.0 - u_res.xy) / u_res.y;
   vec2 mouse = (u_mouse * 2.0 - 1.0);
   vec2 motion = clamp(mouse + u_tilt * 0.85, vec2(-1.0), vec2(1.0));
+  vec2 tilt = clamp(u_tilt, vec2(-1.0), vec2(1.0));
+  float tiltStrength = clamp(length(tilt), 0.0, 1.0);
+  vec2 tiltDir = tiltStrength > 0.0001 ? normalize(tilt) : vec2(0.0);
 
   float md = length(p - motion * vec2(u_res.x / u_res.y, 1.0));
   float mGlow = exp(-md * md * 2.0);
@@ -105,9 +108,13 @@ void main() {
   flow += motion * 0.35;
   flow += vec2(sin(u_t * 0.24), cos(u_t * 0.19)) * 0.12;
   flow += vec2(p.y, -p.x) * (mGlow * 0.12);
+  // Écoulement principal orienté par l'inclinaison du téléphone
+  flow += tiltDir * (u_t * (0.22 + tiltStrength * 0.95));
+  // Cisaillement latéral pour renforcer la sensation de "coulée"
+  flow += vec2(-tiltDir.y, tiltDir.x) * sin(u_t * 0.55 + dot(p, tiltDir) * 6.0) * (0.08 * tiltStrength);
   flow *= 0.92;
 
-  float shade = pattern(flow * 1.25 + vec2(u_t * 0.06, -u_t * 0.04));
+  float shade = pattern(flow * (1.22 + tiltStrength * 0.16) + vec2(u_t * 0.06, -u_t * 0.04));
   shade += mGlow * 0.08;
   shade = clamp(shade, 0.0, 1.0);
 
