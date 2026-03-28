@@ -2,14 +2,25 @@ import { useEffect } from 'react'
 import DisplayText from '../components/DisplayText'
 import TextReveal from '../components/TextReveal'
 import Seo from '../components/Seo'
+import InstagramPreview from '../components/InstagramPreview'
 import { useSiteContent } from '../hooks/useSiteContent'
 import { useIsMobile } from '../hooks/useIsMobile'
 import { getDisplayFontFamily } from '../lib/typography'
 
 export default function Contact() {
+  const INSTAGRAM_PROFILE_URL = 'https://www.instagram.com/instories_ai'
   const content = useSiteContent()
   const isMobile = useIsMobile()
   const { contact } = content
+  const projects = content.projects
+    .filter(project => project.status === 'published')
+    .sort((a, b) => a.order - b.order)
+  const instagramSocial = contact.socials.find(
+    social => social.label.toLowerCase().includes('instagram') || social.href.includes('instagram.com')
+  )
+  const instagramUrl = instagramSocial?.href?.startsWith('http')
+    ? instagramSocial.href
+    : INSTAGRAM_PROFILE_URL
   const displayFont = getDisplayFontFamily(content.design.displayFont)
   const displayCase = content.design.displayCase
   const displayEmphasis = content.design.displayEmphasis
@@ -147,6 +158,19 @@ export default function Contact() {
             </p>
           </div>
         </div>
+      </section>
+
+      <section style={{ padding: isMobile ? '0 20px 64px' : '0 48px 88px' }}>
+        <InstagramPreview
+          title="Instagram"
+          subtitle="@instories_ai — aperçu du feed"
+          instagramUrl={instagramUrl}
+          items={projects.map(project => ({
+            id: project.id,
+            title: `${project.client} — ${project.title}`,
+            image: project.cover,
+          }))}
+        />
       </section>
     </main>
   )

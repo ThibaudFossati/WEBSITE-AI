@@ -5,11 +5,13 @@ import DisplayText from '../components/DisplayText'
 import TextReveal from '../components/TextReveal'
 import Magnet from '../components/Magnet'
 import Seo from '../components/Seo'
+import InstagramPreview from '../components/InstagramPreview'
 import { useSiteContent } from '../hooks/useSiteContent'
 import { useIsMobile } from '../hooks/useIsMobile'
 import { getDisplayFontFamily } from '../lib/typography'
 
 export default function Home() {
+  const INSTAGRAM_PROFILE_URL = 'https://www.instagram.com/instories_ai'
   const heroRef = useRef<HTMLElement>(null)
   const heroTextRef = useRef<HTMLDivElement>(null)
   const [hoveredProject, setHoveredProject] = useState<string | null>(null)
@@ -23,6 +25,12 @@ export default function Home() {
   const projects = content.projects
     .filter(project => project.status === 'published')
     .sort((a, b) => a.order - b.order)
+  const instagramSocial = content.contact.socials.find(
+    social => social.label.toLowerCase().includes('instagram') || social.href.includes('instagram.com')
+  )
+  const instagramUrl = instagramSocial?.href?.startsWith('http')
+    ? instagramSocial.href
+    : INSTAGRAM_PROFILE_URL
   const ctaLines = home.contactCtaTitle.split('\n')
 
   useEffect(() => {
@@ -580,6 +588,25 @@ export default function Home() {
             </Link>
           </Magnet>
         </TextReveal>
+      </section>
+
+      <section
+        style={{
+          padding: isMobile ? '56px 20px' : '72px 48px',
+          background: '#ffffff',
+        }}
+      >
+        <InstagramPreview
+          compact
+          title="Instagram"
+          subtitle="@instories_ai — sélection récente"
+          instagramUrl={instagramUrl}
+          items={projects.map(project => ({
+            id: project.id,
+            title: `${project.client} — ${project.title}`,
+            image: project.cover,
+          }))}
+        />
       </section>
 
       {/* ── FOOTER ── */}

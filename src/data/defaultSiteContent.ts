@@ -127,7 +127,7 @@ export const defaultSiteContent: SiteContent = {
     phone: '06 03 36 18 36',
     addressLines: ['72, rue des Archives', '75003 Paris, France'],
     socials: [
-      { label: 'Instagram', href: 'https://instagram.com/instories_ai' },
+      { label: 'Instagram', href: 'https://www.instagram.com/instories_ai' },
       { label: 'Behance', href: '#' },
       { label: 'TikTok', href: 'https://tiktok.com/@ghost.in.gloss' },
       { label: 'LinkedIn', href: '#' },
@@ -139,7 +139,7 @@ export const defaultSiteContent: SiteContent = {
     copyright: '© InStories 2026',
     registration: 'RCS 850 498 635 R.C.S. Paris',
     socials: [
-      { label: 'Instagram', href: 'https://instagram.com/instories_ai' },
+      { label: 'Instagram', href: 'https://www.instagram.com/instories_ai' },
       { label: 'Behance', href: '#' },
       { label: 'TikTok', href: 'https://tiktok.com/@ghost.in.gloss' },
       { label: 'LinkedIn', href: '#' },

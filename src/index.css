@@ -953,6 +953,113 @@ body {
   transform: translateX(-6px);
 }
 
+/* ── Instagram preview ── */
+.ig-preview {
+  border: 1px solid rgba(10, 10, 10, 0.08);
+  border-radius: 24px;
+  padding: 22px;
+  background: rgba(250, 248, 244, 0.72);
+}
+
+.ig-preview.compact {
+  padding: 18px;
+}
+
+.ig-preview-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.ig-kicker {
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(10, 10, 10, 0.4);
+  margin-bottom: 6px;
+}
+
+.ig-preview h3 {
+  font-family: 'Bodoni Moda', serif;
+  font-style: italic;
+  font-weight: 400;
+  font-size: clamp(24px, 3.2vw, 38px);
+  letter-spacing: -0.01em;
+  line-height: 1;
+}
+
+.ig-cta {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: rgba(10, 10, 10, 0.78);
+  border-bottom: 1px solid rgba(10, 10, 10, 0.2);
+  padding-bottom: 4px;
+  white-space: nowrap;
+}
+
+.ig-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.ig-preview:not(.compact) .ig-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.ig-card {
+  position: relative;
+  display: block;
+  aspect-ratio: 1 / 1;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid rgba(10, 10, 10, 0.08);
+  background: radial-gradient(circle at 30% 20%, rgba(180, 200, 240, 0.36) 0%, rgba(230, 235, 245, 0.8) 42%, rgba(242, 242, 242, 0.92) 100%);
+  text-decoration: none;
+}
+
+.ig-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.ig-card span {
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: 10px;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.92);
+  background: rgba(8, 10, 16, 0.52);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  padding: 6px 10px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 768px) {
+  .ig-preview-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .ig-grid,
+  .ig-preview:not(.compact) .ig-grid,
+  .ig-preview.compact .ig-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 /* ── Canvas ── */
 #particle-canvas {
   position: absolute;
