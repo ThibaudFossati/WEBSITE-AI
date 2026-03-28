@@ -1,0 +1,18 @@
+# InStories
+
+InStories is an art direction and AI creativity studio based in Paris.
+
+## Main pages
+- https://instories.fr/
+- https://instories.fr/about
+- https://instories.fr/contact
+
+## Portfolio
+- https://instories.fr/projects/salomon
+- https://instories.fr/projects/armani-beauty
+- https://instories.fr/projects/nespresso-fusalp
+- https://instories.fr/projects/estee-lauder
+- https://instories.fr/projects/granier
+
+## Contact
+- Email: contact@instories.fr

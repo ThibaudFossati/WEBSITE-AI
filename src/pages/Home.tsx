@@ -4,6 +4,7 @@ import ParticleCanvas from '../components/ParticleCanvas'
 import DisplayText from '../components/DisplayText'
 import TextReveal from '../components/TextReveal'
 import Magnet from '../components/Magnet'
+import Seo from '../components/Seo'
 import { useSiteContent } from '../hooks/useSiteContent'
 import { useIsMobile } from '../hooks/useIsMobile'
 import { getDisplayFontFamily } from '../lib/typography'
@@ -49,6 +50,30 @@ export default function Home() {
 
   return (
     <main style={{ ['--display-font' as string]: displayFont }}>
+      <Seo
+        title="InStories — Art Direction & AI pour marques premium"
+        description={home.servicesIntro}
+        path="/"
+        jsonLd={{
+          '@context': 'https://schema.org',
+          '@graph': [
+            {
+              '@type': 'Organization',
+              name: 'InStories',
+              url: 'https://instories.fr/',
+              logo: 'https://instories.fr/InStories-logo-BOT.png',
+              sameAs: footer.socials.map(social => social.href).filter(Boolean),
+            },
+            {
+              '@type': 'Person',
+              name: 'Thibaud Fossati',
+              jobTitle: 'Art Director',
+              worksFor: { '@type': 'Organization', name: 'InStories' },
+              address: { '@type': 'PostalAddress', addressLocality: 'Paris', addressCountry: 'FR' },
+            },
+          ],
+        }}
+      />
       {/* ── HERO ── */}
       <section
         ref={heroRef}

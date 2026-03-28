@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import DisplayText from '../components/DisplayText'
 import TextReveal from '../components/TextReveal'
+import Seo from '../components/Seo'
 import { useSiteContent } from '../hooks/useSiteContent'
 import { useIsMobile } from '../hooks/useIsMobile'
 import { getDisplayFontFamily } from '../lib/typography'
@@ -16,6 +17,23 @@ export default function Contact() {
 
   return (
     <main style={{ paddingTop: '120px', minHeight: '100svh', background: '#fff', ['--display-font' as string]: displayFont }}>
+      <Seo
+        title="Contact — InStories"
+        description={contact.availabilityText}
+        path="/contact"
+        jsonLd={{
+          '@context': 'https://schema.org',
+          '@type': 'ContactPage',
+          name: 'Contact InStories',
+          url: 'https://instories.fr/contact',
+          mainEntity: {
+            '@type': 'Organization',
+            name: 'InStories',
+            email: contact.email,
+            telephone: contact.phone,
+          },
+        }}
+      />
       <section style={{ padding: isMobile ? '56px 20px' : '80px 48px' }}>
         <TextReveal as="h1" delay={100}>
           <span style={{

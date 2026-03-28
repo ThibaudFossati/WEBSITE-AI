@@ -3,6 +3,7 @@ import type { Project } from '../data/projects'
 import { type SiteContent, type SocialLink } from '../data/defaultSiteContent'
 import { cloneDefaultSiteContent, loadSiteContent, resetSiteContent, saveSiteContent } from '../lib/siteContent'
 import DisplayText from '../components/DisplayText'
+import Seo from '../components/Seo'
 import {
   DISPLAY_CASE_OPTIONS,
   DISPLAY_EMPHASIS_OPTIONS,
@@ -216,6 +217,12 @@ export default function Studio() {
 
   return (
     <main className="studio-shell">
+      <Seo
+        title="Content Admin — InStories"
+        description="Back-office local de gestion des contenus InStories."
+        path="/content"
+        noindex
+      />
       <aside className="studio-sidebar">
         <div>
           <p className="studio-kicker">Admin contenu</p>

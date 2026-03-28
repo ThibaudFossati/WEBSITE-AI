@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import DisplayText from '../components/DisplayText'
 import TextReveal from '../components/TextReveal'
+import Seo from '../components/Seo'
 import { useSiteContent } from '../hooks/useSiteContent'
 import { useIsMobile } from '../hooks/useIsMobile'
 import { getDisplayFontFamily } from '../lib/typography'
@@ -26,6 +27,12 @@ export default function Project() {
   if (!project) {
     return (
       <main style={{ paddingTop: '120px', textAlign: 'center', padding: isMobile ? '150px 20px' : '200px 48px' }}>
+        <Seo
+          title="Projet introuvable — InStories"
+          description="Ce projet n'existe pas ou n'est plus disponible."
+          path={`/projects/${id ?? ''}`}
+          noindex
+        />
         <p>Projet introuvable</p>
         <Link to="/">← Retour</Link>
       </main>
@@ -34,6 +41,24 @@ export default function Project() {
 
   return (
     <main style={{ paddingTop: '120px', ['--display-font' as string]: displayFont }}>
+      <Seo
+        title={`${project.client} — ${project.title} | InStories`}
+        description={project.description}
+        path={`/projects/${project.id}`}
+        image={project.cover || '/InStories-logo-BOT.png'}
+        type="article"
+        jsonLd={{
+          '@context': 'https://schema.org',
+          '@type': 'CreativeWork',
+          name: `${project.client} — ${project.title}`,
+          headline: project.title,
+          datePublished: project.year,
+          creator: { '@type': 'Organization', name: 'InStories' },
+          image: (project.images.length ? project.images : [project.cover]).filter(Boolean),
+          description: project.description,
+          keywords: project.category.join(', '),
+        }}
+      />
       {/* Hero */}
       <section style={{ padding: isMobile ? '56px 20px 36px' : '80px 48px 60px', background: project.color }}>
         <div style={{ marginBottom: '8px' }}>
@@ -171,7 +196,16 @@ export default function Project() {
       )}
 
       {nextProject && (
-        <Link to={`/projects/${nextProject.id}`} style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
+        <Link
+          to={`/projects/${nextProject.id}`}
+          onClick={() => {
+            window.scrollTo({ top: 0, left: 0, behavior: 'auto' })
+            requestAnimationFrame(() => {
+              window.scrollTo({ top: 0, left: 0, behavior: 'auto' })
+            })
+          }}
+          style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}
+        >
           <section style={{
             padding: isMobile ? '56px 20px' : '80px 48px',
             background: '#f8f6f2',

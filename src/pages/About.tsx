@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import DisplayText from '../components/DisplayText'
+import Seo from '../components/Seo'
 import { useSiteContent } from '../hooks/useSiteContent'
 import { useIsMobile } from '../hooks/useIsMobile'
 import { getDisplayFontFamily, type DisplayCaseMode, type DisplayEmphasisMode } from '../lib/typography'
@@ -69,32 +70,37 @@ function HoverStat({ value, label }: { value: string; label: string }) {
       }}
       style={{
         textAlign: 'right',
-        padding: '14px 18px',
-        borderRadius: '14px',
-        border: '1px solid rgba(10,10,10,0.10)',
-        background: hovered ? 'rgba(10,10,10,0.03)' : 'transparent',
+        padding: '20px 22px',
+        borderRadius: '24px',
+        minHeight: '168px',
+        border: hovered ? '1px solid rgba(10,10,10,0.18)' : '1px solid rgba(10,10,10,0.10)',
+        background: hovered ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.62)',
+        boxShadow: hovered ? '0 14px 40px rgba(10,10,10,0.08)' : 'none',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'space-between',
         transform: hovered ? 'translateY(-3px)' : 'translateY(0)',
-        transition: 'transform 0.25s ease, background 0.25s ease, border-color 0.25s ease',
+        transition: 'transform 0.25s ease, background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease',
       }}
     >
       <div style={{
         fontFamily: BODONI,
         fontStyle: 'italic',
-        fontSize: 'clamp(52px, 6vw, 90px)',
+        fontSize: 'clamp(70px, 7vw, 124px)',
         fontWeight: 400,
         letterSpacing: '-0.04em',
         color: '#0a0a0a',
-        lineHeight: 0.9,
+        lineHeight: 0.82,
       }}>
         {displayValue}
       </div>
       <div style={{
         fontFamily: INTER,
-        fontSize: '11px',
+        fontSize: '12px',
         letterSpacing: '0.20em',
         textTransform: 'uppercase',
         color: 'rgba(10,10,10,0.38)',
-        marginTop: '10px',
+        marginTop: '14px',
       }}>
         {label}
       </div>
@@ -325,21 +331,32 @@ function VariantC({
           ))}
         </p>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '28px', alignItems: 'flex-end' }}>
-          <div style={{ display: 'flex', gap: '18px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '18px', alignItems: 'flex-end', width: '100%' }}>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(2, minmax(220px, 1fr))',
+            gap: '14px',
+            width: 'min(760px, 100%)',
+          }}>
             {stats.map(stat => (
               <HoverStat key={stat.label} value={stat.value} label={stat.label} />
             ))}
           </div>
-          <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap', justifyContent: 'flex-end', maxWidth: '560px' }}>
+          <div style={{
+            display: 'flex',
+            gap: '14px',
+            flexWrap: 'wrap',
+            justifyContent: 'flex-end',
+            width: 'min(760px, 100%)',
+          }}>
             {agencies.map(a => (
               <span key={a} style={{
                 fontFamily: INTER,
-                fontSize: '10px',
+                fontSize: '11px',
                 letterSpacing: '0.16em',
                 textTransform: 'uppercase',
                 color: 'rgba(10,10,10,0.34)',
-                padding: '4px 8px',
+                padding: '6px 2px',
               }}>{a}</span>
             ))}
           </div>
@@ -364,6 +381,21 @@ export default function About() {
 
   return (
     <main style={{ paddingTop: '80px', ['--display-font' as string]: displayFont }}>
+      <Seo
+        title="À propos — Thibaud Fossati | InStories"
+        description={content.about.splitIntro}
+        path="/about"
+        type="profile"
+        jsonLd={{
+          '@context': 'https://schema.org',
+          '@type': 'Person',
+          name: 'Thibaud Fossati',
+          jobTitle: 'Art Director',
+          address: { '@type': 'PostalAddress', addressLocality: 'Paris', addressCountry: 'FR' },
+          worksFor: { '@type': 'Organization', name: 'InStories', url: 'https://instories.fr/' },
+          knowsAbout: content.about.skills,
+        }}
+      />
 
       {/* Switcher */}
       {!isMobile && (
