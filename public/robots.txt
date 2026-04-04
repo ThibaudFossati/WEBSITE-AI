@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /content
+
+Sitemap: https://instories.fr/sitemap.xml
